@@ -5,6 +5,8 @@ public class Player {
 
     int x;
     int y;
+    int width;
+    int height;
     int speed;
 
     KeyHandler keyH;
@@ -17,34 +19,50 @@ public class Player {
 
         x = 100;
         y = 100;
-        speed = 4;
+        width = 48;
+        height = 48;
+        speed = 10;
     }
 
     public void update(){
+        int x = this.x;
+        int y = this.y;
 
-
-
-        if(keyH.upPressed){
-            y -= speed;
-        }
-        if(keyH.downPressed){
-            y += speed;
-        }
         if(keyH.leftPressed){
             x -= speed;
-        }
-        if(keyH.rightPressed){
+        } else if(keyH.rightPressed){
             x += speed;
         }
 
+        if(keyH.upPressed){
+            y -= speed;
+        } else if(keyH.downPressed){
+            y += speed;
+        }
 
+        Collision collision = gp.getTileManager().getCollision(x, y, width, height);
 
+        if(collision.collided) {
+            if(collision.left > -1) {
+                this.x = collision.left;
+            } else if(collision.right > -1) {
+                this.x = collision.right;
+            } else if(collision.top > -1) {
+                this.y = collision.top;
+            } else if(collision.bottom > -1) {
+                this.y = collision.bottom;
+            }
+            return;
+        }
+
+        this.x = x;
+        this.y = y;
     }
 
     public void draw(Graphics2D g2){
 
         g2.setColor(Color.white);
-        g2.fillRect(x, y, 48, 48);
+        g2.fillRect(x, y, width, height);
 
     }
 
