@@ -3,6 +3,12 @@ import java.awt.*;
 
 public class GamePanel extends JPanel implements Runnable{
 
+    enum GameState {
+        MENU,
+        PLAY,
+        PAUSE
+    }
+
     final int originalTileSize = 26;
     final int scale = 2;
 
@@ -16,6 +22,10 @@ public class GamePanel extends JPanel implements Runnable{
     Player player = new Player(keyH, this);
     TileManager tileM = new TileManager(this);
     Thread gameThread;
+
+    GameState gameState = GameState.MENU;
+    int menuIndex = 0;
+    String[] menuItems = {"Start Fight", "Options", "Quit"};
 
 
     int playerX = 100;
@@ -67,8 +77,46 @@ public class GamePanel extends JPanel implements Runnable{
         }
     }
     public void update(){
+        if (gameState == GameState.MENU) {
+            handleMenuInput();
+            return;
+        }
 
-        player.update();
+        if (gameState == GameState.PLAY) {
+            player.update();
+            return;
+        }
+
+        if (gameState == GameState.PAUSE && keyH.menuSelectPressed) {
+            gameState = GameState.PLAY;
+            keyH.menuSelectPressed = false;
+        }
+    }
+
+    private void handleMenuInput() {
+        if (keyH.menuUpPressed) {
+            menuIndex = (menuIndex - 1 + menuItems.length) % menuItems.length;
+            keyH.menuUpPressed = false;
+        }
+
+        if (keyH.menuDownPressed) {
+            menuIndex = (menuIndex + 1) % menuItems.length;
+            keyH.menuDownPressed = false;
+        }
+
+        if (!keyH.menuSelectPressed) {
+            return;
+        }
+
+        if (menuIndex == 0) {
+            gameState = GameState.PLAY;
+        } else if (menuIndex == 1) {
+            gameState = GameState.PAUSE;
+        } else if (menuIndex == 2) {
+            System.exit(0);
+        }
+
+        keyH.menuSelectPressed = false;
     }
 
 
@@ -79,6 +127,18 @@ public class GamePanel extends JPanel implements Runnable{
         Graphics2D g2 = (Graphics2D)g;
         g2.setColor(Color.white);
 
+        if (gameState == GameState.MENU) {
+            drawMenu(g2);
+            g2.dispose();
+            return;
+        }
+
+        if (gameState == GameState.PAUSE) {
+            drawPause(g2);
+            g2.dispose();
+            return;
+        }
+
         tileM.draw(g2);
         player.draw(g2);
 
@@ -86,5 +146,36 @@ public class GamePanel extends JPanel implements Runnable{
 
        
 
+    }
+
+    private void drawMenu(Graphics2D g2) {
+        g2.setColor(Color.black);
+        g2.fillRect(0, 0, screenWidth, screenHeight);
+
+        g2.setColor(Color.white);
+        g2.setFont(new Font("Serif", Font.BOLD, 44));
+        g2.drawString("SIGMA SHOWDOWN", 95, 130);
+
+        g2.setFont(new Font("Serif", Font.PLAIN, 28));
+        for (int i = 0; i < menuItems.length; i++) {
+            String prefix = i == menuIndex ? "> " : "  ";
+            g2.drawString(prefix + menuItems[i], 180, 230 + (i * 55));
+        }
+
+        g2.setFont(new Font("Serif", Font.PLAIN, 18));
+        g2.drawString("W/S or Arrow Keys to move - Enter/Space to select", 90, 560);
+    }
+
+    private void drawPause(Graphics2D g2) {
+        g2.setColor(Color.black);
+        g2.fillRect(0, 0, screenWidth, screenHeight);
+
+        g2.setColor(Color.white);
+        g2.setFont(new Font("Serif", Font.BOLD, 40));
+        g2.drawString("OPTIONS", 220, 220);
+
+        g2.setFont(new Font("Serif", Font.PLAIN, 22));
+        g2.drawString("Placeholder screen", 210, 280);
+        g2.drawString("Press Enter/Space to return", 165, 330);
     }
 }

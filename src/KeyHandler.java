@@ -4,6 +4,7 @@ import java.awt.event.KeyEvent;
 public class KeyHandler implements KeyListener{
 
     public boolean upPressed, downPressed, leftPressed, rightPressed;
+    public boolean menuUpPressed, menuDownPressed, menuSelectPressed;
     @Override
     public void keyTyped(KeyEvent e) {
 
@@ -14,18 +15,23 @@ public class KeyHandler implements KeyListener{
         
         int code = e.getKeyCode();
 
-        if(code == KeyEvent.VK_W || code == 38){
+        if(code == KeyEvent.VK_W || code == KeyEvent.VK_UP){
             upPressed = true;
+            menuUpPressed = true;
         }
-         if(code == KeyEvent.VK_S || code == 40){
+         if(code == KeyEvent.VK_S || code == KeyEvent.VK_DOWN){
             downPressed = true;
+            menuDownPressed = true;
         }
-         if(code == KeyEvent.VK_A || code == 37){
+         if(code == KeyEvent.VK_A || code == KeyEvent.VK_LEFT){
             leftPressed = true;
         }
-         if(code == KeyEvent.VK_D || code == 39){
+         if(code == KeyEvent.VK_D || code == KeyEvent.VK_RIGHT){
             rightPressed = true;
         }
+         if(code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE){
+            menuSelectPressed = true;
+         }
     }
 
     @Override
@@ -33,16 +39,16 @@ public class KeyHandler implements KeyListener{
 
         int code = e.getKeyCode();
 
-        if(code == KeyEvent.VK_W || code == 38){
+        if(code == KeyEvent.VK_W || code == KeyEvent.VK_UP){
             upPressed = false;
         }
-         if(code == KeyEvent.VK_S || code == 40){
+         if(code == KeyEvent.VK_S || code == KeyEvent.VK_DOWN){
             downPressed = false;
         }
-         if(code == KeyEvent.VK_A || code == 37){
+         if(code == KeyEvent.VK_A || code == KeyEvent.VK_LEFT){
             leftPressed = false;
         }
-         if(code == KeyEvent.VK_D || code == 39){
+         if(code == KeyEvent.VK_D || code == KeyEvent.VK_RIGHT){
             rightPressed = false;
         }
     }
