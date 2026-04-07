@@ -8,6 +8,7 @@ public class Player {
     int width;
     int height;
     int speed;
+    Color color;
 
     KeyHandler keyH;
     GamePanel gp;
@@ -22,6 +23,16 @@ public class Player {
         width = 48;
         height = 48;
         speed = 10;
+        color = Color.white;
+    }
+
+    public void applyCharacter(GameCharacter character) {
+        if (character == null) {
+            return;
+        }
+
+        color = character.getColor();
+        speed = Math.max(6, character.getBaseAttack() / 2);
     }
 
     public void update(){
@@ -61,7 +72,7 @@ public class Player {
 
     public void draw(Graphics2D g2){
 
-        g2.setColor(Color.white);
+        g2.setColor(color);
         g2.fillRect(x, y, width, height);
 
     }
