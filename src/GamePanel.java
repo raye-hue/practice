@@ -1,5 +1,6 @@
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
 
 public class GamePanel extends JPanel implements Runnable{
 
@@ -11,6 +12,7 @@ public class GamePanel extends JPanel implements Runnable{
         PVP_P2_SELECT,
         PLAY,
         ARCADE,
+        ARCADE_GAME_OVER,
         PAUSE
     }
 
@@ -38,6 +40,7 @@ public class GamePanel extends JPanel implements Runnable{
     String selectedPlayMode = "Player vs Player";
     private final AudioManager audioManager = new AudioManager();
     private final String titleMusicPath = "assets/music/title.wav";
+    private final float titleMusicVolumePercent = 30f;
     private GameState previousGameState = null;
     int playerX = 100;
     int playerY = 100;
@@ -51,6 +54,11 @@ public class GamePanel extends JPanel implements Runnable{
     int p2CursorRow = 0, p2CursorCol = 0;
     int characterGridCols = 4;
     int characterGridRows = 2;
+    boolean arcadeLadderActive = false;
+    GameCharacter arcadeLadderPlayerCharacter = null;
+    GameCharacter[] arcadeLadderOpponents = new GameCharacter[0];
+    int arcadeLadderOpponentIndex = 0;
+    String arcadeGameOverText = "";
     FightManager fightManager = new FightManager(screenWidth, screenHeight);
     public GamePanel(){
         this.setPreferredSize(new Dimension(screenWidth, screenHeight));
@@ -59,6 +67,7 @@ public class GamePanel extends JPanel implements Runnable{
         this.addKeyListener(keyH);
         this.setFocusable(true);
         player.applyCharacter(roster[selectedCharacterIndex]);
+        audioManager.setMusicVolumePercent(titleMusicVolumePercent);
 
 
     }
@@ -120,10 +129,29 @@ public class GamePanel extends JPanel implements Runnable{
         if (gameState == GameState.PLAY) {
             fightManager.update(keyH);
             if (fightManager.consumeReturnToMenuRequest()) {
-                fightManager.reset();
-                gameState = GameState.MENU;
-                keyH.resetKeys();
+                if (arcadeLadderActive) {
+                    if (fightManager.didPlayer1Win()) {
+                        arcadeLadderOpponentIndex++;
+                        if (arcadeLadderOpponentIndex < arcadeLadderOpponents.length) {
+                            startNextArcadeLadderFight();
+                        } else {
+                            endArcadeLadderVictory();
+                        }
+                    } else {
+                        gameState = GameState.ARCADE_GAME_OVER;
+                        arcadeGameOverText = "You lost to " + arcadeLadderOpponents[arcadeLadderOpponentIndex].getName() + "!";
+                    }
+                } else {
+                    fightManager.reset();
+                    gameState = GameState.MENU;
+                    keyH.resetKeys();
+                }
             }
+            return;
+        }
+
+        if (gameState == GameState.ARCADE_GAME_OVER) {
+            handleArcadeGameOverInput();
             return;
         }
 
@@ -168,8 +196,18 @@ public class GamePanel extends JPanel implements Runnable{
         }
 
         if (gameState == GameState.PLAY) {
-            fightManager.reset();
-            gameState = GameState.MENU;
+            if (arcadeLadderActive) {
+                endArcadeLadder();
+            } else {
+                fightManager.reset();
+                gameState = GameState.MENU;
+                keyH.resetKeys();
+            }
+            return true;
+        }
+
+        if (gameState == GameState.ARCADE_GAME_OVER) {
+            gameState = GameState.ARCADE;
             keyH.resetKeys();
             return true;
         }
@@ -229,6 +267,12 @@ public class GamePanel extends JPanel implements Runnable{
 
         if (gameState == GameState.ARCADE) {
             drawArcade(g2);
+            g2.dispose();
+            return;
+        }
+
+        if (gameState == GameState.ARCADE_GAME_OVER) {
+            drawArcadeGameOver(g2);
             g2.dispose();
             return;
         }
@@ -300,9 +344,11 @@ public class GamePanel extends JPanel implements Runnable{
 
         if (menuIndex == 0) {
             fightManager.reset();
+            endArcadeLadder();
             gameState = GameState.MODE_SELECT;
         } else if (menuIndex == 1) {
             fightManager.reset();
+            endArcadeLadder();
             gameState = GameState.ARCADE;
         } else if (menuIndex == 2) {
             gameState = GameState.PAUSE;
@@ -415,8 +461,7 @@ public class GamePanel extends JPanel implements Runnable{
             return;
         }
 
-        player.applyCharacter(roster[selectedCharacterIndex]);
-        gameState = GameState.MENU;
+        startArcadeLadder(roster[selectedCharacterIndex]);
         keyH.resetKeys();
     }
 
@@ -549,6 +594,7 @@ public class GamePanel extends JPanel implements Runnable{
         g2.fillRect(0, 0, screenWidth, screenHeight);
 
         GameCharacter selected = roster[selectedCharacterIndex];
+        int opponentCount = Math.max(0, roster.length - 1);
 
         g2.setColor(Color.white);
         g2.setFont(new Font("Impact", Font.BOLD, 40));
@@ -569,9 +615,107 @@ public class GamePanel extends JPanel implements Runnable{
         g2.drawString("HP: " + selected.getMaxHp(), 210, 240);
 
         g2.setFont(new Font("Serif", Font.PLAIN, 18));
-        String prompt = "W/S to cycle characters - Enter/Space to confirm - Esc/Backspace to go back";
+        String prompt = "W/S to cycle characters - Enter/Space to start ladder - Esc/Backspace to go back";
         FontMetrics promptMetrics = g2.getFontMetrics();
         int promptX = (screenWidth - promptMetrics.stringWidth(prompt)) / 2;
         g2.drawString(prompt, promptX, screenHeight - 40);
+
+        g2.setFont(new Font("Serif", Font.PLAIN, 16));
+        String ladderText = "Choose your fighter, then clear the ladder one opponent at a time.";
+        FontMetrics ladderMetrics = g2.getFontMetrics();
+        int ladderX = (screenWidth - ladderMetrics.stringWidth(ladderText)) / 2;
+        g2.drawString(ladderText, ladderX, screenHeight - 58);
+    }
+
+    private void startArcadeLadder(GameCharacter playerCharacter) {
+        arcadeLadderActive = true;
+        arcadeLadderPlayerCharacter = playerCharacter;
+        arcadeLadderOpponents = buildArcadeLadderOpponents(playerCharacter);
+        arcadeLadderOpponentIndex = 0;
+        selectedPlayMode = "Player vs Computer";
+        startNextArcadeLadderFight();
+    }
+
+    private GameCharacter[] buildArcadeLadderOpponents(GameCharacter playerCharacter) {
+        ArrayList<GameCharacter> opponents = new ArrayList<>();
+        for (GameCharacter character : roster) {
+            if (character != playerCharacter) {
+                opponents.add(character);
+            }
+        }
+        return opponents.toArray(new GameCharacter[0]);
+    }
+
+    private void startNextArcadeLadderFight() {
+        if (arcadeLadderOpponentIndex >= arcadeLadderOpponents.length) {
+            endArcadeLadder();
+            return;
+        }
+
+        GameCharacter opponent = arcadeLadderOpponents[arcadeLadderOpponentIndex];
+        fightManager.reset();
+        fightManager.setLadderProgress(arcadeLadderOpponentIndex + 1, arcadeLadderOpponents.length);
+        fightManager.startMatch(arcadeLadderPlayerCharacter, opponent, selectedPlayMode);
+        gameState = GameState.PLAY;
+    }
+
+    private void endArcadeLadder() {
+        arcadeLadderActive = false;
+        arcadeLadderPlayerCharacter = null;
+        arcadeLadderOpponents = new GameCharacter[0];
+        arcadeLadderOpponentIndex = 0;
+        fightManager.reset();
+        gameState = GameState.MENU;
+        keyH.resetKeys();
+    }
+
+    private void endArcadeLadderVictory() {
+        arcadeLadderActive = false;
+        arcadeLadderPlayerCharacter = null;
+        arcadeLadderOpponents = new GameCharacter[0];
+        arcadeLadderOpponentIndex = 0;
+        fightManager.reset();
+        gameState = GameState.MENU;
+        keyH.resetKeys();
+    }
+
+    private void handleArcadeGameOverInput() {
+        if (keyH.menuSelectPressed) {
+            fightManager.reset();
+            arcadeLadderOpponentIndex = 0;
+            startNextArcadeLadderFight();
+            keyH.resetKeys();
+        } else if (keyH.menuBackPressed) {
+            endArcadeLadder();
+        }
+    }
+
+    private void drawArcadeGameOver(Graphics2D g2) {
+        g2.setColor(Color.black);
+        g2.fillRect(0, 0, screenWidth, screenHeight);
+
+        g2.setColor(Color.red);
+        g2.setFont(new Font("Impact", Font.BOLD, 60));
+        String gameOver = "GAME OVER";
+        FontMetrics titleMetrics = g2.getFontMetrics();
+        int titleX = (screenWidth - titleMetrics.stringWidth(gameOver)) / 2;
+        g2.drawString(gameOver, titleX, screenHeight / 3);
+
+        g2.setColor(Color.white);
+        g2.setFont(new Font("Serif", Font.PLAIN, 32));
+        FontMetrics messageMetrics = g2.getFontMetrics();
+        int messageX = (screenWidth - messageMetrics.stringWidth(arcadeGameOverText)) / 2;
+        g2.drawString(arcadeGameOverText, messageX, screenHeight / 2 - 30);
+
+        g2.setFont(new Font("Serif", Font.PLAIN, 24));
+        String retryText = "Press ENTER to try again";
+        FontMetrics retryMetrics = g2.getFontMetrics();
+        int retryX = (screenWidth - retryMetrics.stringWidth(retryText)) / 2;
+        g2.drawString(retryText, retryX, screenHeight / 2 + 40);
+
+        String exitText = "Press ESC to exit";
+        FontMetrics exitMetrics = g2.getFontMetrics();
+        int exitX = (screenWidth - exitMetrics.stringWidth(exitText)) / 2;
+        g2.drawString(exitText, exitX, screenHeight / 2 + 80);
     }
 }

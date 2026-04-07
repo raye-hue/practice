@@ -19,8 +19,8 @@ public class Fighter {
         KO
     }
 
-    private static final int WIDTH = 72;
-    private static final int HEIGHT = 96;
+    private static final int BASE_WIDTH = 72;
+    private static final int BASE_HEIGHT = 96;
     private static final int MOVE_SPEED = 5;
     private static final int JUMP_VELOCITY = 15;
     private static final int ATTACK_TOTAL_FRAMES = 16;
@@ -30,6 +30,8 @@ public class Fighter {
     private final BattleCharacter battleCharacter;
     private final Color fallbackColor;
     private final Map<String, BufferedImage[]> animations = new HashMap<>();
+    private final int drawWidth;
+    private final int drawHeight;
 
     private int x;
     private int y;
@@ -48,6 +50,9 @@ public class Fighter {
     public Fighter(GameCharacter template, int startX, int groundY, boolean facingRight, String spriteFolder) {
         this.battleCharacter = new BattleCharacter(template);
         this.fallbackColor = template.getColor();
+        float scale = resolveSizeScale(template);
+        this.drawWidth = Math.round(BASE_WIDTH * scale);
+        this.drawHeight = Math.round(BASE_HEIGHT * scale);
         this.x = startX;
         this.groundY = groundY;
         this.y = groundY;
@@ -69,11 +74,11 @@ public class Fighter {
     }
 
     public int getWidth() {
-        return WIDTH;
+        return drawWidth;
     }
 
     public int getHeight() {
-        return HEIGHT;
+        return drawHeight;
     }
 
     public boolean isFacingRight() {
@@ -120,7 +125,7 @@ public class Fighter {
             }
         }
 
-        x = Math.max(minX, Math.min(maxX - WIDTH, x));
+        x = Math.max(minX, Math.min(maxX - getWidth(), x));
 
         updateTimers();
         applyGravity();
@@ -156,17 +161,17 @@ public class Fighter {
     }
 
     public Rectangle getBodyBox() {
-        return new Rectangle(x, y, WIDTH, HEIGHT);
+        return new Rectangle(x, y, getWidth(), getHeight());
     }
 
     public Rectangle getAttackBox() {
         int attackWidth = 36;
         int attackHeight = 40;
-        int attackY = y + 24;
+        int attackY = y + (getHeight() / 4);
         int attackX;
 
         if (facingRight) {
-            attackX = x + WIDTH;
+            attackX = x + getWidth();
         } else {
             attackX = x - attackWidth;
         }
@@ -178,14 +183,14 @@ public class Fighter {
         BufferedImage frame = getCurrentFrame();
         if (frame == null) {
             g2.setColor(fallbackColor);
-            g2.fillRect(x, y, WIDTH, HEIGHT);
+            g2.fillRect(x, y, getWidth(), getHeight());
             return;
         }
 
         if (facingRight) {
-            g2.drawImage(frame, x, y, WIDTH, HEIGHT, null);
+            g2.drawImage(frame, x, y, getWidth(), getHeight(), null);
         } else {
-            g2.drawImage(frame, x + WIDTH, y, -WIDTH, HEIGHT, null);
+            g2.drawImage(frame, x + getWidth(), y, -getWidth(), getHeight(), null);
         }
     }
 
@@ -223,7 +228,10 @@ public class Fighter {
         String key = state.name().toLowerCase();
         BufferedImage[] frames = animations.get(key);
         if (frames == null || frames.length == 0) {
-            return null;
+            frames = getFallbackFrames();
+            if (frames == null || frames.length == 0) {
+                return null;
+            }
         }
 
         int frameIndex = (animationTick / 8) % frames.length;
@@ -231,6 +239,40 @@ public class Fighter {
             frameIndex = Math.min(frames.length - 1, (ATTACK_TOTAL_FRAMES - attackTimer) / 4);
         }
         return frames[frameIndex];
+    }
+
+    private BufferedImage[] getFallbackFrames() {
+        BufferedImage[] preferred = animations.get("idle");
+        if (preferred != null && preferred.length > 0) {
+            return preferred;
+        }
+
+        preferred = animations.get("walk");
+        if (preferred != null && preferred.length > 0) {
+            return preferred;
+        }
+
+        preferred = animations.get("attack");
+        if (preferred != null && preferred.length > 0) {
+            return preferred;
+        }
+
+        preferred = animations.get("jump");
+        if (preferred != null && preferred.length > 0) {
+            return preferred;
+        }
+
+        preferred = animations.get("hurt");
+        if (preferred != null && preferred.length > 0) {
+            return preferred;
+        }
+
+        preferred = animations.get("ko");
+        if (preferred != null && preferred.length > 0) {
+            return preferred;
+        }
+
+        return null;
     }
 
     private AnimState resolveState() {
@@ -263,30 +305,159 @@ public class Fighter {
         loadStateFrames("attack", spriteFolder);
         loadStateFrames("hurt", spriteFolder);
         loadStateFrames("ko", spriteFolder);
+
+        if (!animations.containsKey("walk") && animations.containsKey("idle")) {
+            animations.put("walk", animations.get("idle"));
+        }
     }
 
     private void loadStateFrames(String state, String spriteFolder) {
+        String[] aliases = getStateAliases(state);
+
+        BufferedImage[] frames = new BufferedImage[0];
+        for (String alias : aliases) {
+            frames = loadNumberedFrames(alias, spriteFolder);
+            if (frames.length > 0) {
+                break;
+            }
+        }
+
+        if (frames.length == 0) {
+            for (String alias : aliases) {
+                frames = loadSingleFrame(alias, spriteFolder);
+                if (frames.length > 0) {
+                    break;
+                }
+            }
+        }
+
+        if (frames.length == 0) {
+            for (String alias : aliases) {
+                frames = loadSheetFrames(alias, spriteFolder);
+                if (frames.length > 0) {
+                    break;
+                }
+            }
+        }
+
+        if (frames.length > 0) {
+            animations.put(state, frames);
+        }
+    }
+
+    private String[] getStateAliases(String state) {
+        if ("idle".equals(state)) {
+            return new String[]{"idle", "stand"};
+        }
+        if ("attack".equals(state)) {
+            return new String[]{"attack", "punch"};
+        }
+        return new String[]{state};
+    }
+
+    private BufferedImage[] loadNumberedFrames(String state, String spriteFolder) {
         BufferedImage[] loaded = new BufferedImage[8];
         int count = 0;
 
         for (int i = 1; i <= 8; i++) {
-            File file = new File("assets/sprites/" + spriteFolder + "/" + state + "_" + i + ".png");
-            if (!file.exists()) {
-                continue;
-            }
-            try {
-                loaded[count++] = ImageIO.read(file);
-            } catch (IOException ignored) {
-                // Keep fallback rendering when an image cannot be loaded.
-            }
-        }
+            BufferedImage frame = readFirstExisting(
+                    "assets/sprites/" + spriteFolder + "/" + state + "_" + i + ".png",
+                    "assets/sprites/" + spriteFolder + "/" + state + i + ".png",
+                    "assets/" + spriteFolder + "/" + state + "_" + i + ".png",
+                    "assets/" + spriteFolder + "/" + state + i + ".png"
+            );
 
-        if (count == 0) {
-            return;
+            if (frame != null) {
+                loaded[count++] = frame;
+            }
         }
 
         BufferedImage[] frames = new BufferedImage[count];
         System.arraycopy(loaded, 0, frames, 0, count);
-        animations.put(state, frames);
+        return frames;
+    }
+
+    private BufferedImage[] loadSheetFrames(String state, String spriteFolder) {
+        BufferedImage sheet = readFirstExisting(
+                "assets/sprites/" + spriteFolder + "/" + state + ".png",
+                "assets/sprites/" + spriteFolder + "/" + state + ".jpg",
+                "assets/sprites/" + spriteFolder + "/" + state + ".jpeg",
+                "assets/sprites/" + spriteFolder + "/" + state + "_sheet.png",
+                "assets/sprites/" + spriteFolder + "/" + state + "_sheet.jpg",
+            "assets/sprites/" + spriteFolder + "/" + state + "_sheet.jpeg",
+            "assets/" + spriteFolder + "/" + state + ".png",
+            "assets/" + spriteFolder + "/" + state + ".jpg",
+            "assets/" + spriteFolder + "/" + state + ".jpeg",
+            "assets/" + spriteFolder + "/" + state + "_sheet.png",
+            "assets/" + spriteFolder + "/" + state + "_sheet.jpg",
+            "assets/" + spriteFolder + "/" + state + "_sheet.jpeg"
+        );
+
+        if (sheet == null) {
+            return new BufferedImage[0];
+        }
+
+        int frameWidth = sheet.getHeight();
+        if (frameWidth <= 0 || sheet.getWidth() < frameWidth || (sheet.getWidth() % frameWidth) != 0) {
+            if (BASE_WIDTH > 0 && (sheet.getWidth() % BASE_WIDTH) == 0) {
+                frameWidth = BASE_WIDTH;
+            } else {
+                return new BufferedImage[]{sheet};
+            }
+        }
+
+        int frameCount = sheet.getWidth() / frameWidth;
+        BufferedImage[] frames = new BufferedImage[frameCount];
+        for (int i = 0; i < frameCount; i++) {
+            frames[i] = sheet.getSubimage(i * frameWidth, 0, frameWidth, sheet.getHeight());
+        }
+        return frames;
+    }
+
+    private BufferedImage[] loadSingleFrame(String state, String spriteFolder) {
+        BufferedImage frame = readFirstExisting(
+                "assets/sprites/" + spriteFolder + "/" + state + ".png",
+                "assets/sprites/" + spriteFolder + "/" + state + ".jpg",
+                "assets/sprites/" + spriteFolder + "/" + state + ".jpeg",
+                "assets/" + spriteFolder + "/" + state + ".png",
+                "assets/" + spriteFolder + "/" + state + ".jpg",
+                "assets/" + spriteFolder + "/" + state + ".jpeg"
+        );
+
+        if (frame == null) {
+            return new BufferedImage[0];
+        }
+
+        return new BufferedImage[]{frame};
+    }
+
+    private BufferedImage readFirstExisting(String... paths) {
+        for (String path : paths) {
+            File file = new File(path);
+            if (!file.exists()) {
+                continue;
+            }
+            try {
+                BufferedImage image = ImageIO.read(file);
+                if (image != null) {
+                    return image;
+                }
+            } catch (IOException ignored) {
+                // Try the next file candidate.
+            }
+        }
+        return null;
+    }
+
+    private float resolveSizeScale(GameCharacter template) {
+        if (template == null || template.getName() == null) {
+            return 1.0f;
+        }
+
+        if ("gigachad".equalsIgnoreCase(template.getName())) {
+            return 2.0f;
+        }
+
+        return 1.0f;
     }
 }

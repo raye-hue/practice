@@ -14,7 +14,7 @@ public class FightManager {
     private final int screenHeight;
     private final Random random = new Random();
     private BufferedImage battleBackground;
-    private String battleBackgroundPath = "assets/backgrounds/battle.png";
+    private String battleBackgroundPath = "assets/backgrounds/bg.jpg";
 
     private Fighter player1Fighter;
     private Fighter player2Fighter;
@@ -22,6 +22,9 @@ public class FightManager {
     private GameCharacter player2Character;
 
     private String selectedPlayMode = "Player vs Player";
+    private boolean ladderMode = false;
+    private int ladderOpponentIndex = 0;
+    private int ladderOpponentTotal = 0;
 
     private boolean fightInitialized = false;
     private boolean matchOver = false;
@@ -145,8 +148,10 @@ public class FightManager {
     public void draw(Graphics2D g2) {
         drawBackground(g2);
 
-        g2.setColor(new Color(55, 55, 85));
-        g2.fillRect(0, screenHeight - 44, screenWidth, 44);
+        if (battleBackground == null) {
+            g2.setColor(new Color(55, 55, 85));
+            g2.fillRect(0, screenHeight - 44, screenWidth, 44);
+        }
 
         if (player1Fighter != null) {
             player1Fighter.draw(g2);
@@ -168,6 +173,12 @@ public class FightManager {
 
         String opponentLabel = "Player vs Computer".equals(selectedPlayMode) ? "CPU" : "P2";
         g2.drawString("Best of 3 | Score: P1 " + player1RoundsWon + " - " + player2RoundsWon + " " + opponentLabel, 20, 68);
+
+        if (ladderMode && ladderOpponentTotal > 0) {
+            String ladderText = "Ladder: " + ladderOpponentIndex + "/" + ladderOpponentTotal;
+            FontMetrics ladderMetrics = g2.getFontMetrics();
+            g2.drawString(ladderText, screenWidth - 20 - ladderMetrics.stringWidth(ladderText), 28);
+        }
 
         g2.drawString("Esc/Backspace to quit match", 20, screenHeight - 18);
 
@@ -191,6 +202,9 @@ public class FightManager {
         player1Character = null;
         player2Character = null;
         selectedPlayMode = "Player vs Player";
+        ladderMode = false;
+        ladderOpponentIndex = 0;
+        ladderOpponentTotal = 0;
 
         fightInitialized = false;
         matchOver = false;
@@ -208,6 +222,16 @@ public class FightManager {
         }
         returnToMenuRequested = false;
         return true;
+    }
+
+    public void setLadderProgress(int opponentIndex, int opponentTotal) {
+        ladderMode = true;
+        ladderOpponentIndex = Math.max(0, opponentIndex);
+        ladderOpponentTotal = Math.max(0, opponentTotal);
+    }
+
+    public boolean didPlayer1Win() {
+        return player1RoundsWon >= 2;
     }
 
     private void resolveAttackHit(Fighter attacker, Fighter defender) {
@@ -261,8 +285,11 @@ public class FightManager {
     private void loadBattleBackground() {
         File file = new File(battleBackgroundPath);
         if (!file.exists()) {
-            battleBackground = null;
-            return;
+            file = resolveFirstExistingBackground();
+            if (file == null) {
+                battleBackground = null;
+                return;
+            }
         }
 
         try {
@@ -270,6 +297,25 @@ public class FightManager {
         } catch (IOException e) {
             battleBackground = null;
         }
+    }
+
+    private File resolveFirstExistingBackground() {
+        String[] fallbackPaths = {
+                "assets/backgrounds/bg.jpg",
+                "assets/backgrounds/bg.png",
+                "assets/backgrounds/battle.png",
+                "assets/backgrounds/battle.jpg"
+        };
+
+        for (String path : fallbackPaths) {
+            File candidate = new File(path);
+            if (candidate.exists()) {
+                battleBackgroundPath = path;
+                return candidate;
+            }
+        }
+
+        return null;
     }
 
     private void drawHealthBars(Graphics2D g2) {
