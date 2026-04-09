@@ -10,6 +10,7 @@ public class GameCharacter {
     private final int baseDefense;
     private final Color color;
     private final Move[] moves;
+    private final String bio;
 
     public GameCharacter(
             String name,
@@ -19,7 +20,9 @@ public class GameCharacter {
             int baseAttack,
             int baseDefense,
             Color color,
-            Move[] moves
+            Move[] moves,
+            String bio
+
     ) {
         this.name = name;
         this.role = role;
@@ -29,6 +32,7 @@ public class GameCharacter {
         this.baseDefense = baseDefense;
         this.color = color;
         this.moves = moves;
+        this.bio = bio;
     }
 
     public String getName() {
@@ -61,5 +65,9 @@ public class GameCharacter {
 
     public Move[] getMoves() {
         return moves;
+    }
+    
+    public String getBio(){
+        return bio;
     }
 }

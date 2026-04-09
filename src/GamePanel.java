@@ -294,39 +294,96 @@ public class GamePanel extends JPanel implements Runnable{
 
        
 
-    }
-
-    private void drawMenu(Graphics2D g2) {
-        g2.setColor(Color.black);
-        g2.fillRect(0, 0, screenWidth, screenHeight);
-
-        g2.setColor(Color.white);
+    }   /*g2.setFont(new Font("Impact", Font.BOLD, 42));
+        FontMetrics titleMetrics = g2.getFontMetrics();
+        String title = "CHOOSE YOUR MODE";
+        int titleX = (screenWidth - titleMetrics.stringWidth(title)) / 2;
+        // Title alternative layout
         Font titleFont = new Font("Impact", Font.BOLD, 44);
         g2.setFont(titleFont);
         String title = "SIGMA SHOWDOWN";
         FontMetrics titleMetrics = g2.getFontMetrics();
         int titleX = (screenWidth - titleMetrics.stringWidth(title)) / 2;
         int titleY = screenHeight / 4;
+
+        // Red shadow (4 directions)
+        g2.setColor(new Color(180, 20, 0));
+        g2.drawString(title, titleX + 3, titleY + 3);
+        g2.drawString(title, titleX - 3, titleY + 3);
+        g2.drawString(title, titleX + 3, titleY - 3);
+        g2.drawString(title, titleX - 3, titleY - 3);
+
+        // Gold title
+        g2.setColor(new Color(245, 184, 0));
+        g2.drawString(title, titleX, titleY);
+        */
+
+        private void drawMenu(Graphics2D g2) {
+        g2.setColor(Color.black);
+        g2.fillRect(0, 0, screenWidth, screenHeight);
+
+        // Title
+       Font titleFont = new Font("Impact", Font.BOLD, 60);
+        g2.setFont(titleFont);
+        String title = "SIGMA SHOWDOWN";
+        FontMetrics titleMetrics = g2.getFontMetrics();
+        int titleX = (screenWidth - titleMetrics.stringWidth(title)) / 2;
+        int titleY = screenHeight / 4;
+
+        // Red shadow (4 directions)
+        g2.setColor(new Color(180, 20, 0));
+        g2.drawString(title, titleX + 3, titleY + 3);
+        g2.drawString(title, titleX - 3, titleY + 3);
+        g2.drawString(title, titleX + 3, titleY - 3);
+        g2.drawString(title, titleX - 3, titleY - 3);
+
+        // Gold title
+        g2.setColor(new Color(245, 184, 0));
         g2.drawString(title, titleX, titleY);
 
-        g2.setFont(new Font("Serif", Font.PLAIN, 28));
+        // Menu items
+        g2.setFont(new Font("Impact", Font.PLAIN, 28));
         FontMetrics menuMetrics = g2.getFontMetrics();
         int menuStartY = screenHeight / 2;
+        int boxWidth = 220;
+        int boxHeight = 44;
+        int boxX = (screenWidth - boxWidth) / 2;
 
         for (int i = 0; i < menuItems.length; i++) {
-            String prefix = i == menuIndex ? "> " : "  ";
-            String item = prefix + menuItems[i];
-            int itemX = (screenWidth - menuMetrics.stringWidth(item)) / 2;
-            g2.drawString(item, itemX, menuStartY + (i * 45));
+            int boxY = menuStartY + (i * 55) - 32;
+
+            if (i == menuIndex) {
+                g2.setColor(new Color(30, 30, 0));
+                g2.fillRoundRect(boxX, boxY, boxWidth, boxHeight, 10, 10);
+                g2.setColor(new Color(255, 215, 0));
+                g2.setStroke(new BasicStroke(2));
+                g2.drawRoundRect(boxX, boxY, boxWidth, boxHeight, 10, 10);
+            } else {
+                g2.setColor(new Color(15, 15, 15));
+                g2.fillRoundRect(boxX, boxY, boxWidth, boxHeight, 10, 10);
+                g2.setColor(new Color(136, 102, 0));
+                g2.setStroke(new BasicStroke(1));
+                g2.drawRoundRect(boxX, boxY, boxWidth, boxHeight, 10, 10);
+            }
+
+            String item = menuItems[i];
+            int textX = (screenWidth - menuMetrics.stringWidth(item)) / 2;
+            int textY = boxY + (boxHeight + menuMetrics.getAscent() - menuMetrics.getDescent()) / 2;
+            g2.setColor(i == menuIndex ? new Color(255, 215, 0) : new Color(200, 160, 0));
+            g2.drawString(item, textX, textY);
         }
 
+        // Reset stroke back to default after drawing boxes
+        g2.setStroke(new BasicStroke(1));
+
+        // Prompt text
+        g2.setColor(new Color(255, 215, 0));
         g2.setFont(new Font("Serif", Font.PLAIN, 18));
         String text = "W/S or Arrow Keys to move - Enter/Space to select";
         FontMetrics promptMetrics = g2.getFontMetrics();
         int promptX = (screenWidth - promptMetrics.stringWidth(text)) / 2;
         g2.drawString(text, promptX, screenHeight - 40);
     }
-
     private void handleMenuInput() {
         if (keyH.menuUpPressed) {
             menuIndex = (menuIndex - 1 + menuItems.length) % menuItems.length;
@@ -487,8 +544,8 @@ public class GamePanel extends JPanel implements Runnable{
         int playerX = (screenWidth - playerMetrics.stringWidth(playerText)) / 2;
         g2.drawString(playerText, playerX, 90);
 
-        int boxSize = 90;
-        int spacing = 20;
+        int boxSize = 110;
+        int spacing = 35;
         int totalWidth = characterGridCols * boxSize + (characterGridCols - 1) * spacing;
         int totalHeight = characterGridRows * boxSize + (characterGridRows - 1) * spacing;
         int startX = (screenWidth - totalWidth) / 2;
@@ -526,63 +583,153 @@ public class GamePanel extends JPanel implements Runnable{
 
         int selectedIndex = currentRow * characterGridCols + currentCol;
         if (selectedIndex < roster.length) {
-            GameCharacter selected = roster[selectedIndex];
-            g2.setColor(Color.white);
-            g2.setFont(new Font("Serif", Font.BOLD, 24));
-            String selectedText = "Selected: " + selected.getName();
-            FontMetrics selectedMetrics = g2.getFontMetrics();
-            int selectedX = (screenWidth - selectedMetrics.stringWidth(selectedText)) / 2;
-            g2.drawString(selectedText, selectedX, screenHeight - 80);
-            g2.setFont(new Font("Serif", Font.PLAIN, 18));
-            String statsText = selected.getRole() + " | HP: " + selected.getMaxHp();
-            FontMetrics statsMetrics = g2.getFontMetrics();
-            int statsX = (screenWidth - statsMetrics.stringWidth(statsText)) / 2;
-            g2.drawString(statsText, statsX, screenHeight - 50);
-        }
+        GameCharacter selected = roster[selectedIndex];
+
+        int panelX = 80, panelY = screenHeight - 175;
+        int panelW = screenWidth - 160, panelH = 130;
+        g2.setColor(new Color(20, 20, 20));
+        g2.fillRoundRect(panelX, panelY, panelW, panelH, 10, 10);
+        g2.setColor(new Color(255, 215, 0));
+        g2.setStroke(new BasicStroke(2));
+        g2.drawRoundRect(panelX, panelY, panelW, panelH, 10, 10);
+        g2.setStroke(new BasicStroke(1));
+
+        // Image placeholder
+        g2.setColor(new Color(40, 40, 40));
+        g2.fillRoundRect(panelX + 12, panelY + 12, 90, 90, 6, 6);
+        g2.setColor(new Color(136, 102, 0));
+        g2.setStroke(new BasicStroke(1));
+        g2.drawRoundRect(panelX + 12, panelY + 12, 90, 90, 6, 6);
+        g2.setColor(new Color(100, 100, 100));
+        g2.setFont(new Font("Serif", Font.PLAIN, 12));
+        g2.drawString("IMG", panelX + 42, panelY + 62);
+
+        // Character name
+        g2.setColor(new Color(255, 215, 0));
+        g2.setFont(new Font("Impact", Font.PLAIN, 20));
+        g2.drawString(selected.getName(), panelX + 115, panelY + 30);
+
+        // Role + HP
+        g2.setColor(new Color(180, 180, 180));
+        g2.setFont(new Font("Serif", Font.PLAIN, 13));
+        g2.drawString(selected.getRole() + "  |  HP: " + selected.getMaxHp(), panelX + 115, panelY + 52);
+
+        // Bio
+        g2.setColor(new Color(210, 210, 210));
+        g2.setFont(new Font("Serif", Font.PLAIN, 13));
+        drawWrappedText(g2, selected.getBio(), panelX + 115, panelY + 75, panelW - 200, 18);
+    }
 
         g2.setFont(new Font("Serif", Font.PLAIN, 16));
         String prompt = "Arrow Keys/WASD to move - Enter/Space to select - Esc/Backspace to go back";
         FontMetrics promptMetrics = g2.getFontMetrics();
         int promptX = (screenWidth - promptMetrics.stringWidth(prompt)) / 2;
-        g2.drawString(prompt, promptX, screenHeight - 20);
+        g2.drawString(prompt, promptX, screenHeight - 10);
     }
-
-    private void drawPause(Graphics2D g2) {
-        g2.setColor(Color.black);
-        g2.fillRect(0, 0, screenWidth, screenHeight);
-
-        g2.setColor(Color.white);
-        g2.setFont(new Font("Serif", Font.BOLD, 40));
-        g2.drawString("OPTIONS", 220, 220);
-
-        g2.setFont(new Font("Serif", Font.PLAIN, 22));
-        g2.drawString("Placeholder screen", 210, 280);
-        g2.drawString("Enter/Space to resume match", 165, 330);
-        g2.drawString("Esc/Backspace to return to menu", 150, 365);
+    private void drawWrappedText(Graphics2D g2, String text, int x, int y, int maxWidth, int lineHeight) {
+    if (text == null || text.isEmpty()) return;
+    FontMetrics fm = g2.getFontMetrics();
+    String[] words = text.split(" ");
+    StringBuilder currentLine = new StringBuilder();
+    for (String word : words) {
+        if (fm.stringWidth(word) > maxWidth) {
+            if (currentLine.length() > 0) {
+                g2.drawString(currentLine.toString(), x, y);
+                y += lineHeight;
+                currentLine = new StringBuilder();
+            }
+            g2.drawString(word, x, y);
+            y += lineHeight;
+            continue;
+        }
+        String testLine = currentLine.length() == 0 ? word : currentLine + " " + word;
+        if (fm.stringWidth(testLine) <= maxWidth) {
+            currentLine = new StringBuilder(testLine);
+        } else {
+            if (currentLine.length() > 0) {
+                g2.drawString(currentLine.toString(), x, y);
+                y += lineHeight;
+            }
+            currentLine = new StringBuilder(word);
+        }
     }
+    if (currentLine.length() > 0) {
+        g2.drawString(currentLine.toString(), x, y);
+    }
+}
 
-    private void drawModeSelect(Graphics2D g2) {
-        g2.setColor(Color.black);
-        g2.fillRect(0, 0, screenWidth, screenHeight);
+        private void drawPause(Graphics2D g2) {
+            g2.setColor(Color.black);
+            g2.fillRect(0, 0, screenWidth, screenHeight);
 
-        g2.setColor(Color.white);
-        g2.setFont(new Font("Impact", Font.BOLD, 42));
-        String title = "CHOOSE YOUR MODE";
-        FontMetrics titleMetrics = g2.getFontMetrics();
-        int titleX = (screenWidth - titleMetrics.stringWidth(title)) / 2;
-        g2.drawString(title, titleX, 150);
+            g2.setColor(Color.white);
+            g2.setFont(new Font("Serif", Font.BOLD, 40));
+            g2.drawString("OPTIONS", 220, 220);
 
-        g2.setFont(new Font("Serif", Font.PLAIN, 30));
-        FontMetrics modeMetrics = g2.getFontMetrics();
-        int startY = 270;
-        for (int i = 0; i < playModeItems.length; i++) {
-            String prefix = i == playModeIndex ? "> " : "  ";
-            String item = prefix + playModeItems[i];
-            int itemX = (screenWidth - modeMetrics.stringWidth(item)) / 2;
-            g2.drawString(item, itemX, startY + (i * 55));
+            g2.setFont(new Font("Serif", Font.PLAIN, 22));
+            g2.drawString("Placeholder screen", 210, 280);
+            g2.drawString("Enter/Space to resume match", 165, 330);
+            g2.drawString("Esc/Backspace to return to menu", 150, 365);
         }
 
+        private void drawModeSelect(Graphics2D g2) {
+        g2.setColor(Color.black);
+        g2.fillRect(0, 0, screenWidth, screenHeight);
+
+        // Title - Impact Bold, yellow/gold with red shadow
+        g2.setFont(new Font("Impact", Font.BOLD, 42));
+        FontMetrics titleMetrics = g2.getFontMetrics();
+        String title = "CHOOSE YOUR MODE";
+        int titleX = (screenWidth - titleMetrics.stringWidth(title)) / 2;
+
+        // Red shadow
+        g2.setColor(new Color(180, 20, 0));
+        g2.drawString(title, titleX + 3, 153);
+        g2.drawString(title, titleX - 3, 153);
+        g2.drawString(title, titleX + 3, 147);
+        g2.drawString(title, titleX - 3, 147);
+
+        // Gold title
+        g2.setColor(new Color(245, 184, 0));
+        g2.drawString(title, titleX, 150);
+
+        // Button dimensions
+        g2.setFont(new Font("Impact", Font.BOLD, 28));
+        FontMetrics modeMetrics = g2.getFontMetrics();
+        
+        // Button size adjustments
+        int btnWidth = 270;  
+        int btnHeight = 50;
+        int btnX = (screenWidth - btnWidth) / 2; 
+        int startY = 240;
+        int gap = 65;
+
+        for (int i = 0; i < playModeItems.length; i++) {
+            String item = playModeItems[i];
+            int btnY = startY + (i * gap);
+
+         if (i == playModeIndex) {
+                g2.setColor(new Color(30, 30, 0));
+                g2.fillRoundRect(btnX, btnY, btnWidth, btnHeight, 10, 10);
+                g2.setColor(new Color(255, 215, 0));
+                g2.setStroke(new BasicStroke(2));
+                g2.drawRoundRect(btnX, btnY, btnWidth, btnHeight, 10, 10);
+            } else {
+                g2.setColor(new Color(15, 15, 15));
+                g2.fillRoundRect(btnX, btnY, btnWidth, btnHeight, 10, 10);
+                g2.setColor(new Color(136, 102, 0));
+                g2.setStroke(new BasicStroke(1));
+                g2.drawRoundRect(btnX, btnY, btnWidth, btnHeight, 10, 10);
+            }
+            // Center text inside button
+            int textX = btnX + (btnWidth - modeMetrics.stringWidth(item)) / 2;
+            int textY = btnY + (btnHeight + modeMetrics.getAscent() - modeMetrics.getDescent()) / 2;
+            g2.drawString(item, textX, textY);
+        }
+
+        // Hint text
         g2.setFont(new Font("Serif", Font.PLAIN, 18));
+        g2.setColor(new Color(200, 160, 0));
         String prompt = "W/S or Arrow Keys to move - Enter/Space to select - Esc/Backspace to go back";
         FontMetrics promptMetrics = g2.getFontMetrics();
         int promptX = (screenWidth - promptMetrics.stringWidth(prompt)) / 2;

@@ -55,7 +55,7 @@ public class Fighter {
         this.drawHeight = Math.round(BASE_HEIGHT * scale);
         this.x = startX;
         this.groundY = groundY;
-        this.y = groundY;
+        this.y = groundY - this.drawHeight;
         this.facingRight = facingRight;
         this.onGround = true;
         loadSpriteSet(spriteFolder);
@@ -212,16 +212,16 @@ public class Fighter {
     }
 
     private void applyGravity() {
-        if (!onGround) {
-            velocityY += 1;
-            y += velocityY;
-            if (y >= groundY) {
-                y = groundY;
-                velocityY = 0;
-                onGround = true;
-            }
+    if (!onGround) {
+        velocityY += 1;
+        y += velocityY;
+        if (y + drawHeight >= groundY) { 
+            y = groundY - drawHeight;     
+            velocityY = 0;
+            onGround = true;
         }
     }
+}
 
     private BufferedImage getCurrentFrame() {
         AnimState state = resolveState();

@@ -14,7 +14,7 @@ public class FightManager {
     private final int screenHeight;
     private final Random random = new Random();
     private BufferedImage battleBackground;
-    private String battleBackgroundPath = "assets/backgrounds/bg.jpg";
+    private String battleBackgroundPath = "assets/backgrounds/GameBG.jpg";
 
     private Fighter player1Fighter;
     private Fighter player2Fighter;
@@ -261,7 +261,7 @@ public class FightManager {
     }
 
     private void initializeRound() {
-        int groundY = screenHeight - 140;
+        int groundY = screenHeight;
         player1Fighter = new Fighter(player1Character, 150, groundY, true, toSpriteFolderName(player1Character.getName()));
         player2Fighter = new Fighter(player2Character, screenWidth - 220, groundY, false, toSpriteFolderName(player2Character.getName()));
     }

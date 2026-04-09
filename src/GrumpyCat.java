@@ -15,7 +15,8 @@ public class GrumpyCat extends GameCharacter {
                         new Move("Nope Swipe", 10, 18, 4, MoveEffect.DAMAGE, "Fast low-cost hit"),
                         new Move("Disapproval Aura", 5, 10, 10, MoveEffect.DAMAGE_AND_DEBUFF, "Damage and slow"),
                         new Move("Eternal Grump", 35, 50, 20, MoveEffect.DAMAGE, "Heavy strike")
-                }
+                },
+                "A fortress of pure rejection who wins by simply being unimpressed. She uses a cold, judgmental presence to slow the world down, sapping the opponent's momentum until they are crushed by the weight of her apathy."
         );
     }
 }
