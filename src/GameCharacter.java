@@ -1,4 +1,5 @@
 import java.awt.Color;
+import java.awt.image.BufferedImage;
 
 public class GameCharacter {
 
@@ -70,4 +71,10 @@ public class GameCharacter {
     public String getBio(){
         return bio;
     }
+
+    public java.awt.image.BufferedImage getPortrait() { 
+        return null;
+     }
+
+
 }

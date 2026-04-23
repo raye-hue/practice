@@ -1,15 +1,31 @@
 import java.awt.Color;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
+import java.io.File;
 
 public class Trollface extends GameCharacter {
+
+    private static BufferedImage portrait;
+
+        static {
+            try {
+            portrait = ImageIO.read(new java.io.File("assets/CharacterProfile/TrollFace.png"));
+            } catch (Exception e) {
+                portrait = null;
+            }
+        }
+        @Override
+        public BufferedImage getPortrait() {
+            return portrait;
+        }
+
+
 
     public Trollface() {
         super(
                 "Trollface",
                 "Trickster / Trap Fighter",
-                110,
-                60,
-                15,
-                9,
+                110, 60, 15, 9,
                 new Color(220, 220, 220),
                 new Move[]{
                         new Move("Minor Trolling", 10, 18, 5, MoveEffect.DAMAGE_AND_DEBUFF, "30% miss chance next attack"),

@@ -1,6 +1,22 @@
 import java.awt.Color;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
 
 public class GrumpyCat extends GameCharacter {
+
+    private static BufferedImage portrait;
+
+    static {
+        try {
+        portrait = ImageIO.read(new java.io.File("assets/CharacterProfile/Grumpy.png"));
+        } catch (Exception e) {
+            portrait = null;
+        }
+    }
+    @Override
+    public BufferedImage getPortrait() {
+         return portrait;
+    }
 
     public GrumpyCat() {
         super(

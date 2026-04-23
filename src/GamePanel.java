@@ -2,7 +2,10 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 
+
 public class GamePanel extends JPanel implements Runnable{
+    
+    private java.awt.image.BufferedImage menuBackground;
 
     enum GameState {
         MENU,
@@ -10,6 +13,7 @@ public class GamePanel extends JPanel implements Runnable{
         PVP_SELECT,
         PVP_P1_SELECT,
         PVP_P2_SELECT,
+        AI_SELECT,
         PLAY,
         ARCADE,
         ARCADE_GAME_OVER,
@@ -69,8 +73,15 @@ public class GamePanel extends JPanel implements Runnable{
         player.applyCharacter(roster[selectedCharacterIndex]);
         audioManager.setMusicVolumePercent(titleMusicVolumePercent);
 
+         try {
+                menuBackground = javax.imageio.ImageIO.read(new java.io.File("assets/backgrounds/GameMenuBG.png"));
+            } catch (Exception e) {
+                menuBackground = null;
+            }
+        }
 
-    }
+
+    
 
     @Override
     public void addNotify() {
@@ -160,6 +171,11 @@ public class GamePanel extends JPanel implements Runnable{
             return;
         }
 
+        if(gameState == GameState.AI_SELECT){
+            handleAiCharacterSelectInput();
+            return;
+        }
+
         if (gameState == GameState.PVP_P1_SELECT || gameState == GameState.PVP_P2_SELECT) {
             handlePvpCharacterSelectInput();
             return;
@@ -224,6 +240,12 @@ public class GamePanel extends JPanel implements Runnable{
             return true;
         }
 
+        if (gameState == GameState.AI_SELECT) {
+            gameState = GameState.MODE_SELECT;
+            keyH.resetKeys();
+            return true;
+        }
+
         if (gameState == GameState.PVP_P2_SELECT) {
             gameState = GameState.PVP_P1_SELECT;
             keyH.resetKeys();
@@ -252,6 +274,12 @@ public class GamePanel extends JPanel implements Runnable{
             g2.dispose();
             return;
         }
+        if (gameState == GameState.AI_SELECT) {
+            drawAiCharacterSelect(g2);
+            g2.dispose();
+            return;
+        }
+
 
         if (gameState == GameState.PVP_P1_SELECT || gameState == GameState.PVP_P2_SELECT) {
             drawPvpCharacterSelect(g2);
@@ -319,8 +347,21 @@ public class GamePanel extends JPanel implements Runnable{
         */
 
         private void drawMenu(Graphics2D g2) {
-        g2.setColor(Color.black);
-        g2.fillRect(0, 0, screenWidth, screenHeight);
+        if (menuBackground != null) {
+        g2.drawImage(menuBackground, 0, 0, screenWidth, screenHeight, null);
+        } else {
+            g2.setColor(Color.black);
+            g2.fillRect(0, 0, screenWidth, screenHeight);
+        }
+
+        // Semi-transparent overlay so text stays readable
+        GradientPaint centerDarken = new GradientPaint(
+            screenWidth / 2, 0, new Color(0, 0, 0, 60),
+            screenWidth / 2, screenHeight, new Color(0, 0, 0, 180));
+    
+            g2.setPaint(centerDarken);
+            g2.fillRect(0, 0, screenWidth, screenHeight);
+            g2.setPaint(null);
 
         // Title
        Font titleFont = new Font("Impact", Font.BOLD, 60);
@@ -328,7 +369,7 @@ public class GamePanel extends JPanel implements Runnable{
         String title = "SIGMA SHOWDOWN";
         FontMetrics titleMetrics = g2.getFontMetrics();
         int titleX = (screenWidth - titleMetrics.stringWidth(title)) / 2;
-        int titleY = screenHeight / 4;
+        int titleY = screenHeight / 6;
 
         // Red shadow (4 directions)
         g2.setColor(new Color(180, 20, 0));
@@ -344,7 +385,7 @@ public class GamePanel extends JPanel implements Runnable{
         // Menu items
         g2.setFont(new Font("Impact", Font.PLAIN, 28));
         FontMetrics menuMetrics = g2.getFontMetrics();
-        int menuStartY = screenHeight / 2;
+        int menuStartY = screenHeight / 2 + 45;
         int boxWidth = 220;
         int boxHeight = 44;
         int boxX = (screenWidth - boxWidth) / 2;
@@ -443,10 +484,7 @@ public class GamePanel extends JPanel implements Runnable{
             player2Character = null;
         } else {
             fightManager.reset();
-            player1Character = roster[0];
-            player2Character = roster[Math.min(1, roster.length - 1)];
-            fightManager.startMatch(player1Character, player2Character, selectedPlayMode);
-            gameState = GameState.PLAY;
+            gameState = GameState.AI_SELECT;
         }
         keyH.resetKeys();
     }
@@ -502,6 +540,42 @@ public class GamePanel extends JPanel implements Runnable{
         }
         keyH.resetKeys();
     }
+     private void handleAiCharacterSelectInput() {
+        if (keyH.menuUpPressed) {
+            p1CursorRow = (p1CursorRow - 1 + characterGridRows) % characterGridRows;
+            keyH.menuUpPressed = false;
+        }
+        if (keyH.menuDownPressed) {
+            p1CursorRow = (p1CursorRow + 1) % characterGridRows;
+            keyH.menuDownPressed = false;
+        }
+        if (keyH.menuLeftPressed) {
+            p1CursorCol = (p1CursorCol - 1 + characterGridCols) % characterGridCols;
+            keyH.menuLeftPressed = false;
+        }
+        if (keyH.menuRightPressed) {
+            p1CursorCol = (p1CursorCol + 1) % characterGridCols;
+            keyH.menuRightPressed = false;
+        }
+        if (!keyH.menuSelectPressed) return;
+
+        int selectedIndex = p1CursorRow * characterGridCols + p1CursorCol;
+        if (selectedIndex >= roster.length) return;
+
+        player1Character = roster[selectedIndex];
+
+        int aiIndex;
+        do {
+            aiIndex = (int)(Math.random() * roster.length);
+        } while (aiIndex == selectedIndex);
+        player2Character = roster[aiIndex];
+
+        fightManager.reset();
+        fightManager.startMatch(player1Character, player2Character, "Player vs Computer");
+        gameState = GameState.PLAY;
+        keyH.resetKeys();
+    }
+        
 
     private void handleCharacterSelectInput() {
         if (keyH.menuUpPressed) {
@@ -520,6 +594,104 @@ public class GamePanel extends JPanel implements Runnable{
 
         startArcadeLadder(roster[selectedCharacterIndex]);
         keyH.resetKeys();
+    }
+
+    private void drawAiCharacterSelect(Graphics2D g2) {
+        g2.setColor(Color.black);
+        g2.fillRect(0, 0, screenWidth, screenHeight);
+
+        int currentRow = p1CursorRow;
+        int currentCol = p1CursorCol;
+
+        g2.setColor(Color.yellow);
+        g2.setFont(new Font("Impact", Font.BOLD, 44));
+        String title = "SIGMA SHOWDOWN";
+        FontMetrics titleMetrics = g2.getFontMetrics();
+        int titleX = (screenWidth - titleMetrics.stringWidth(title)) / 2;
+        g2.drawString(title, titleX, 50);
+
+        g2.setColor(Color.green);
+        g2.setFont(new Font("Impact", Font.BOLD, 28));
+        String playerText = "CHOOSE YOUR FIGHTER";
+        FontMetrics playerMetrics = g2.getFontMetrics();
+        int playerX = (screenWidth - playerMetrics.stringWidth(playerText)) / 2;
+        g2.drawString(playerText, playerX, 90);
+
+        int boxSize = 110;
+        int spacing = 35;
+        int totalWidth = characterGridCols * boxSize + (characterGridCols - 1) * spacing;
+        int totalHeight = characterGridRows * boxSize + (characterGridRows - 1) * spacing;
+        int startX = (screenWidth - totalWidth) / 2;
+        int startY = (screenHeight - totalHeight) / 2 - 50;
+
+        for (int row = 0; row < characterGridRows; row++) {
+            for (int col = 0; col < characterGridCols; col++) {
+                int index = row * characterGridCols + col;
+                if (index >= roster.length) continue;
+
+                int x = startX + col * (boxSize + spacing);
+                int y = startY + row * (boxSize + spacing);
+
+                GameCharacter chr = roster[index];
+                java.awt.image.BufferedImage chrPortrait = chr.getPortrait();
+                if (chrPortrait != null) {
+                    g2.drawImage(chrPortrait, x, y, x + boxSize, y + boxSize, 0, 0, 90, 90, null);
+                } else {
+                    g2.setColor(chr.getColor());
+                    g2.fillRect(x, y, boxSize, boxSize);
+                }
+
+                g2.setColor(Color.white);
+                g2.setFont(new Font("Serif", Font.BOLD, 14));
+                FontMetrics nameMetrics = g2.getFontMetrics();
+                int nameX = x + (boxSize - nameMetrics.stringWidth(chr.getName())) / 2;
+                g2.drawString(chr.getName(), nameX, y + boxSize + 20);
+
+                if (row == currentRow && col == currentCol) {
+                    g2.setColor(Color.green);
+                    g2.setStroke(new BasicStroke(4));
+                    g2.drawRect(x - 3, y - 3, boxSize + 6, boxSize + 6);
+                }
+            }
+        }
+
+        int selectedIndex = currentRow * characterGridCols + currentCol;
+        if (selectedIndex < roster.length) {
+            GameCharacter selected = roster[selectedIndex];
+            int panelX = 80, panelY = screenHeight - 175;
+            int panelW = screenWidth - 160, panelH = 130;
+            g2.setColor(new Color(20, 20, 20));
+            g2.fillRoundRect(panelX, panelY, panelW, panelH, 10, 10);
+            g2.setColor(new Color(255, 215, 0));
+            g2.setStroke(new BasicStroke(2));
+            g2.drawRoundRect(panelX, panelY, panelW, panelH, 10, 10);
+            g2.setStroke(new BasicStroke(1));
+
+            java.awt.image.BufferedImage portrait = selected.getPortrait();
+            if (portrait != null) {
+                g2.drawImage(portrait, panelX + 12, panelY + 12, panelX + 102, panelY + 102, 0, 0, 90, 90, null);
+            } else {
+                g2.setColor(selected.getColor());
+                g2.fillRoundRect(panelX + 12, panelY + 12, 90, 90, 6, 6);
+            }
+
+            g2.setColor(new Color(255, 215, 0));
+            g2.setFont(new Font("Impact", Font.PLAIN, 20));
+            g2.drawString(selected.getName(), panelX + 115, panelY + 30);
+            g2.setColor(new Color(180, 180, 180));
+            g2.setFont(new Font("Serif", Font.PLAIN, 13));
+            g2.drawString(selected.getRole() + "  |  HP: " + selected.getMaxHp(), panelX + 115, panelY + 52);
+            g2.setColor(new Color(210, 210, 210));
+            g2.setFont(new Font("Serif", Font.PLAIN, 13));
+            drawWrappedText(g2, selected.getBio(), panelX + 115, panelY + 75, panelW - 200, 18);
+        }
+
+        g2.setColor(Color.white);
+        g2.setFont(new Font("Serif", Font.PLAIN, 16));
+        String prompt = "Arrow Keys/WASD to move - Enter/Space to select - Esc/Backspace to go back";
+        FontMetrics promptMetrics = g2.getFontMetrics();
+        int promptX = (screenWidth - promptMetrics.stringWidth(prompt)) / 2;
+        g2.drawString(prompt, promptX, screenHeight - 10);
     }
 
     private void drawPvpCharacterSelect(Graphics2D g2) {
@@ -560,8 +732,14 @@ public class GamePanel extends JPanel implements Runnable{
                 int y = startY + row * (boxSize + spacing);
 
                 GameCharacter chr = roster[index];
-                g2.setColor(chr.getColor());
-                g2.fillRect(x, y, boxSize, boxSize);
+                java.awt.image.BufferedImage chrPortrait = chr.getPortrait();
+                if (chrPortrait != null) {
+                    g2.drawImage(chrPortrait, x, y, x + boxSize, y + boxSize,
+                                0, 0, 92, 92, null);
+                } else {
+                    g2.setColor(chr.getColor());
+                    g2.fillRect(x, y, boxSize, boxSize);
+}
 
                 g2.setColor(Color.white);
                 g2.setFont(new Font("Serif", Font.BOLD, 14));
@@ -595,14 +773,17 @@ public class GamePanel extends JPanel implements Runnable{
         g2.setStroke(new BasicStroke(1));
 
         // Image placeholder
-        g2.setColor(new Color(40, 40, 40));
-        g2.fillRoundRect(panelX + 12, panelY + 12, 90, 90, 6, 6);
+        java.awt.image.BufferedImage portrait = selected.getPortrait();
+        if (portrait != null) {
+            g2.drawImage(portrait, panelX + 12, panelY + 12, panelX + 102, panelY + 102,
+                        0, 0, 92, 92, null);
+        } else {
+            g2.setColor(selected.getColor());
+            g2.fillRoundRect(panelX + 12, panelY + 12, 90, 90, 6, 6);
+        }
         g2.setColor(new Color(136, 102, 0));
         g2.setStroke(new BasicStroke(1));
         g2.drawRoundRect(panelX + 12, panelY + 12, 90, 90, 6, 6);
-        g2.setColor(new Color(100, 100, 100));
-        g2.setFont(new Font("Serif", Font.PLAIN, 12));
-        g2.drawString("IMG", panelX + 42, panelY + 62);
 
         // Character name
         g2.setColor(new Color(255, 215, 0));
@@ -627,36 +808,36 @@ public class GamePanel extends JPanel implements Runnable{
         g2.drawString(prompt, promptX, screenHeight - 10);
     }
     private void drawWrappedText(Graphics2D g2, String text, int x, int y, int maxWidth, int lineHeight) {
-    if (text == null || text.isEmpty()) return;
-    FontMetrics fm = g2.getFontMetrics();
-    String[] words = text.split(" ");
-    StringBuilder currentLine = new StringBuilder();
-    for (String word : words) {
-        if (fm.stringWidth(word) > maxWidth) {
-            if (currentLine.length() > 0) {
-                g2.drawString(currentLine.toString(), x, y);
+        if (text == null || text.isEmpty()) return;
+        FontMetrics fm = g2.getFontMetrics();
+        String[] words = text.split(" ");
+        StringBuilder currentLine = new StringBuilder();
+        for (String word : words) {
+            if (fm.stringWidth(word) > maxWidth) {
+                if (currentLine.length() > 0) {
+                    g2.drawString(currentLine.toString(), x, y);
+                    y += lineHeight;
+                    currentLine = new StringBuilder();
+                }
+                g2.drawString(word, x, y);
                 y += lineHeight;
-                currentLine = new StringBuilder();
+                continue;
             }
-            g2.drawString(word, x, y);
-            y += lineHeight;
-            continue;
+            String testLine = currentLine.length() == 0 ? word : currentLine + " " + word;
+            if (fm.stringWidth(testLine) <= maxWidth) {
+                currentLine = new StringBuilder(testLine);
+            } else {
+                if (currentLine.length() > 0) {
+                    g2.drawString(currentLine.toString(), x, y);
+                    y += lineHeight;
+                }
+                currentLine = new StringBuilder(word);
+            }
         }
-        String testLine = currentLine.length() == 0 ? word : currentLine + " " + word;
-        if (fm.stringWidth(testLine) <= maxWidth) {
-            currentLine = new StringBuilder(testLine);
-        } else {
-            if (currentLine.length() > 0) {
-                g2.drawString(currentLine.toString(), x, y);
-                y += lineHeight;
-            }
-            currentLine = new StringBuilder(word);
+        if (currentLine.length() > 0) {
+            g2.drawString(currentLine.toString(), x, y);
         }
     }
-    if (currentLine.length() > 0) {
-        g2.drawString(currentLine.toString(), x, y);
-    }
-}
 
         private void drawPause(Graphics2D g2) {
             g2.setColor(Color.black);
