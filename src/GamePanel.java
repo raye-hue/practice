@@ -74,7 +74,7 @@ public class GamePanel extends JPanel implements Runnable{
         audioManager.setMusicVolumePercent(titleMusicVolumePercent);
 
          try {
-                menuBackground = javax.imageio.ImageIO.read(new java.io.File("assets/backgrounds/GameMenuBG.png"));
+                menuBackground = javax.imageio.ImageIO.read(new java.io.File("assets/backgrounds/MenuBackground.png"));
             } catch (Exception e) {
                 menuBackground = null;
             }

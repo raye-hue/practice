@@ -6,17 +6,17 @@ public class GrumpyCat extends GameCharacter {
 
     private static BufferedImage portrait;
 
-    static {
-        try {
-        portrait = ImageIO.read(new java.io.File("assets/CharacterProfile/Grumpy.png"));
-        } catch (Exception e) {
-            portrait = null;
+        static {
+            try {
+            portrait = ImageIO.read(new java.io.File("assets/CharacterProfile/GrumpyCat.png"));
+            } catch (Exception e) {
+                portrait = null;
+            }
         }
-    }
-    @Override
-    public BufferedImage getPortrait() {
-         return portrait;
-    }
+        @Override
+        public BufferedImage getPortrait() {
+            return portrait;
+        }
 
     public GrumpyCat() {
         super(

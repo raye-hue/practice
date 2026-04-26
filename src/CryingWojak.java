@@ -8,7 +8,7 @@ public class CryingWojak extends GameCharacter {
 
     static {
         try {
-        portrait = ImageIO.read(new java.io.File("assets/CharacterProfile/Wojack.png"));
+        portrait = ImageIO.read(new java.io.File("assets/CharacterProfile/CryingWojak.png"));
         } catch (Exception e) {
             portrait = null;
         }
