@@ -352,14 +352,17 @@ public class Fighter {
         if ("attack".equals(state)) {
             return new String[]{"attack", "punch"};
         }
+        if ("hurt".equals(state)) {
+            return new String[]{"hurt", "hit"};
+        }
         return new String[]{state};
     }
 
     private BufferedImage[] loadNumberedFrames(String state, String spriteFolder) {
-        BufferedImage[] loaded = new BufferedImage[8];
+        BufferedImage[] loaded = new BufferedImage[9];
         int count = 0;
 
-        for (int i = 1; i <= 8; i++) {
+        for (int i = 0; i <= 8; i++) {
             BufferedImage frame = readFirstExisting(
                     "assets/sprites/" + spriteFolder + "/" + state + "_" + i + ".png",
                     "assets/sprites/" + spriteFolder + "/" + state + i + ".png",
@@ -456,6 +459,10 @@ public class Fighter {
 
         if ("gigachad".equalsIgnoreCase(template.getName())) {
             return 2.0f;
+        }
+
+        if ("doge".equalsIgnoreCase(template.getName())) {
+            return 1.35f;
         }
 
         return 1.0f;
