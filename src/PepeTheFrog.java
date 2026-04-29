@@ -18,6 +18,11 @@ public class PepeTheFrog extends GameCharacter {
             return portrait;
         }
 
+        @Override
+        public String getSpriteFolderName() {
+            return "pepe";
+        }
+
 
     public PepeTheFrog() {
         super(

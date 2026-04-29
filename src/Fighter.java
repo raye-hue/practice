@@ -454,7 +454,7 @@ public class Fighter {
 
     private float resolveSizeScale(GameCharacter template) {
         if (template == null || template.getName() == null) {
-            return 1.0f;
+            return 1.15f;
         }
 
         if ("gigachad".equalsIgnoreCase(template.getName())) {
@@ -465,6 +465,22 @@ public class Fighter {
             return 1.35f;
         }
 
-        return 1.0f;
+        if ("trollface".equalsIgnoreCase(template.getName())) {
+            return 1.6f;
+        }
+
+        if ("pepe the frog".equalsIgnoreCase(template.getName())) {
+            return 1.6f;
+        }
+
+        if ("skibidi toilet".equalsIgnoreCase(template.getName())) {
+            return 1.7f;
+        }
+
+        if ("crying wojak".equalsIgnoreCase(template.getName())) {
+            return 1.6f;
+        }
+        
+        return 1.15f;
     }
 }
