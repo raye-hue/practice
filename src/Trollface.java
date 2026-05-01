@@ -19,6 +19,11 @@ public class Trollface extends GameCharacter {
             return portrait;
         }
 
+    @Override
+    public String getSpriteFolderName() {
+        return "trollface";
+    }
+
 
 
     public Trollface() {

@@ -474,7 +474,7 @@ public class Fighter {
 
     private float resolveSizeScale(GameCharacter template) {
         if (template == null || template.getName() == null) {
-            return 1.0f;
+            return 1.15f;
         }
 
         if ("gigachad".equalsIgnoreCase(template.getName())) {
@@ -493,9 +493,6 @@ public class Fighter {
         return 1.50f;
         }
 
-        
-
-       
         return 1.0f;
     }
 }

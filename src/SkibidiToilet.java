@@ -18,6 +18,11 @@ public class SkibidiToilet extends GameCharacter {
             return portrait;
         }
 
+    @Override
+    public String getSpriteFolderName() {
+        return "skibidi";
+    }
+
     public SkibidiToilet() {
         super(
                 "Skibidi Toilet",

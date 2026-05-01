@@ -10,6 +10,10 @@ import javax.imageio.ImageIO;
 
 public class FightManager {
 
+    private static final int TARGET_FPS = 60;
+    private static final int ROUND_SECONDS = 60;
+    private static final int ROUND_TIME_FRAMES = TARGET_FPS * ROUND_SECONDS;
+
     private final int screenWidth;
     private final int screenHeight;
     private final Random random = new Random();
@@ -31,6 +35,7 @@ public class FightManager {
     private boolean returnToMenuRequested = false;
 
     private int roundOverDelayFrames = 0;
+    private int roundTimeFrames = ROUND_TIME_FRAMES;
     private String roundResultText = "";
     private int player1RoundsWon = 0;
     private int player2RoundsWon = 0;
@@ -59,6 +64,7 @@ public class FightManager {
         this.player1RoundsWon = 0;
         this.player2RoundsWon = 0;
         this.roundOverDelayFrames = 0;
+        this.roundTimeFrames = ROUND_TIME_FRAMES;
         this.roundResultText = "";
         this.matchOver = false;
         this.returnToMenuRequested = false;
@@ -126,28 +132,36 @@ public class FightManager {
         resolveAttackHit(player1Fighter, player2Fighter);
         resolveAttackHit(player2Fighter, player1Fighter);
 
+        if (roundTimeFrames > 0) {
+            roundTimeFrames--;
+        }
+
         if (player1Fighter.isDefeated() || player2Fighter.isDefeated()) {
             if (player1Fighter.isDefeated() && player2Fighter.isDefeated()) {
-                roundResultText = "Double KO!";
+                finishRound("Double KO!");
             } else if (player2Fighter.isDefeated()) {
-                player1RoundsWon++;
-                if (player1RoundsWon >= 2) {
-                    roundResultText = "Player 1 Wins The Match!";
-                    matchOver = true;
-                } else {
-                    roundResultText = "Round to Player 1!";
-                }
+                awardRoundToPlayer1();
             } else {
-                player2RoundsWon++;
-                if (player2RoundsWon >= 2) {
-                    roundResultText = playerVsCpu ? "CPU Wins The Match!" : "Player 2 Wins The Match!";
-                    matchOver = true;
-                } else {
-                    roundResultText = playerVsCpu ? "Round to CPU!" : "Round to Player 2!";
-                }
+                awardRoundToPlayer2(playerVsCpu);
             }
 
-            roundOverDelayFrames = 180;
+            return;
+        }
+
+        if (roundTimeFrames == 0) {
+            int p1Hp = player1Fighter.getBattleCharacter().getCurrentHp();
+            int p2Hp = player2Fighter.getBattleCharacter().getCurrentHp();
+
+            if (p1Hp > p2Hp) {
+                awardRoundToPlayer1("Time Up! Round to Player 1!");
+            } else if (p2Hp > p1Hp) {
+                awardRoundToPlayer2(
+                        playerVsCpu ? "Time Up! Round to CPU!" : "Time Up! Round to Player 2!",
+                        playerVsCpu
+                );
+            } else {
+                finishRound("Time Up! Draw Round!");
+            }
         }
     }
 
@@ -178,7 +192,15 @@ public class FightManager {
         }
 
         String opponentLabel = "Player vs Computer".equals(selectedPlayMode) ? "CPU" : "P2";
-        g2.drawString("Best of 3 | Score: P1 " + player1RoundsWon + " - " + player2RoundsWon + " " + opponentLabel, 20, 68);
+        String scoreText = "Score: P1 " + player1RoundsWon + " - " + player2RoundsWon + " " + opponentLabel;
+        FontMetrics scoreMetrics = g2.getFontMetrics();
+        int scoreX = (screenWidth - scoreMetrics.stringWidth(scoreText)) / 2;
+        g2.drawString(scoreText, scoreX, 48);
+
+        String timerText = "Time: " + getRoundSecondsRemaining();
+        FontMetrics timerMetrics = g2.getFontMetrics();
+        int timerX = (screenWidth - timerMetrics.stringWidth(timerText)) / 2;
+        g2.drawString(timerText, timerX, 68);
 
         if (ladderMode && ladderOpponentTotal > 0) {
             String ladderText = "Ladder: " + ladderOpponentIndex + "/" + ladderOpponentTotal;
@@ -233,6 +255,7 @@ public class FightManager {
         returnToMenuRequested = false;
 
         roundOverDelayFrames = 0;
+        roundTimeFrames = ROUND_TIME_FRAMES;
         roundResultText = "";
         player1RoundsWon = 0;
         player2RoundsWon = 0;
@@ -286,18 +309,69 @@ public class FightManager {
     private void startNextRound(KeyHandler keyH) {
         initializeRound();
         roundOverDelayFrames = 0;
+        roundTimeFrames = ROUND_TIME_FRAMES;
         roundResultText = "";
         keyH.resetKeys();
     }
-
-    private void initializeRound() {
-        int groundY = (int)(screenHeight * 0.88); // ← 80% down the screen
-        player1Fighter = new Fighter(player1Character, 150, groundY, true, toSpriteFolderName(player1Character.getName()));
-        player2Fighter = new Fighter(player2Character, screenWidth - 220, groundY, false, toSpriteFolderName(player2Character.getName()));
-
+     private int getRoundSecondsRemaining() {
+        return Math.max(0, (roundTimeFrames + TARGET_FPS - 1) / TARGET_FPS);
     }
 
-    private String toSpriteFolderName(String characterName) {
+    private void awardRoundToPlayer1() {
+        awardRoundToPlayer1("Round to Player 1!");
+    }
+
+    private void awardRoundToPlayer1(String roundWinText) {
+        player1RoundsWon++;
+        if (player1RoundsWon >= 2) {
+            finishRound("Player 1 Wins The Match!");
+            matchOver = true;
+            return;
+        }
+
+        finishRound(roundWinText);
+    }
+
+    private void awardRoundToPlayer2(boolean playerVsCpu) {
+        awardRoundToPlayer2(playerVsCpu ? "Round to CPU!" : "Round to Player 2!", playerVsCpu);
+    }
+
+    private void awardRoundToPlayer2(String roundWinText, boolean playerVsCpu) {
+        player2RoundsWon++;
+        if (player2RoundsWon >= 2) {
+            finishRound(playerVsCpu ? "CPU Wins The Match!" : "Player 2 Wins The Match!");
+            matchOver = true;
+            return;
+        }
+
+        finishRound(roundWinText);
+    }
+
+    private void finishRound(String resultText) {
+        roundResultText = resultText;
+        roundOverDelayFrames = 180;
+    }
+
+    private void initializeRound() {
+        int groundY = screenHeight;
+        player1Fighter = new Fighter(player1Character, 150, groundY, true, getSpriteFolderName(player1Character));
+        player2Fighter = new Fighter(player2Character, screenWidth - 220, groundY, false, getSpriteFolderName(player2Character));
+    }
+
+    private String getSpriteFolderName(GameCharacter character) {
+        if (character == null) {
+            return null;
+        }
+
+        String explicitFolder = character.getSpriteFolderName();
+        if (explicitFolder != null && !explicitFolder.isEmpty()) {
+            return explicitFolder;
+        }
+
+        String characterName = character.getName();
+        if (characterName == null) {
+            return null;
+        }
         return characterName.toLowerCase().replaceAll("[^a-z0-9]", "");
     }
 

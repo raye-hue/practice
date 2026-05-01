@@ -1,5 +1,4 @@
 import java.awt.Color;
-import java.awt.image.BufferedImage;
 
 public class GameCharacter {
 
@@ -13,18 +12,7 @@ public class GameCharacter {
     private final Move[] moves;
     private final String bio;
 
-    public GameCharacter(
-            String name,
-            String role,
-            int maxHp,
-            int maxMana,
-            int baseAttack,
-            int baseDefense,
-            Color color,
-            Move[] moves,
-            String bio
-
-    ) {
+    public GameCharacter(String name, String role, int maxHp, int maxMana, int baseAttack, int baseDefense, Color color, Move[] moves, String bio) {
         this.name = name;
         this.role = role;
         this.maxHp = maxHp;
@@ -76,5 +64,12 @@ public class GameCharacter {
         return null;
      }
 
+    public String getSpriteFolderName() {
+        if (name == null) {
+            return null;
+        }
+        return name.toLowerCase().replaceAll("[^a-z0-9]", "");
+    }
+ 
 
 }

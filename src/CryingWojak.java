@@ -18,6 +18,11 @@ public class CryingWojak extends GameCharacter {
          return portrait;
     }
 
+        @Override
+        public String getSpriteFolderName() {
+            return "wojak";
+        }
+
     public CryingWojak() {
         super(
                 "Crying Wojak",
