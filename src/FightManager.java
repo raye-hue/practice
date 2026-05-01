@@ -35,6 +35,8 @@ public class FightManager {
     private int player1RoundsWon = 0;
     private int player2RoundsWon = 0;
 
+    private boolean paused = false;
+
     public FightManager(int screenWidth, int screenHeight) {
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
@@ -68,6 +70,10 @@ public class FightManager {
     public void update(KeyHandler keyH) {
         if (!fightInitialized || player1Fighter == null || player2Fighter == null) {
             return;
+        }
+
+        if (paused) {
+            return; 
         }
 
         if (roundOverDelayFrames > 0) {
@@ -194,6 +200,22 @@ public class FightManager {
             int subX = (screenWidth - subMetrics.stringWidth(sub)) / 2;
             g2.drawString(sub, subX, screenHeight / 2 + 35);
         }
+
+        if (paused) {
+        g2.setColor(new Color(0, 0, 0, 150));
+        g2.fillRect(0, 0, screenWidth, screenHeight);
+
+        g2.setColor(Color.yellow);
+        g2.setFont(new Font("Impact", Font.BOLD, 60));
+        String pauseText = "PAUSED";
+        FontMetrics pm = g2.getFontMetrics();
+        g2.drawString(pauseText, (screenWidth - pm.stringWidth(pauseText)) / 2, screenHeight / 2 - 20);
+
+        g2.setFont(new Font("Serif", Font.PLAIN, 22));
+        String resume = "Press P to resume";
+        FontMetrics rm = g2.getFontMetrics();
+        g2.drawString(resume, (screenWidth - rm.stringWidth(resume)) / 2, screenHeight / 2 + 30);
+}
     }
 
     public void reset() {
@@ -234,6 +256,14 @@ public class FightManager {
         return player1RoundsWon >= 2;
     }
 
+    public void togglePause() {
+    paused = !paused;
+    }
+
+    public boolean isPaused() {
+        return paused;
+    }
+
     private void resolveAttackHit(Fighter attacker, Fighter defender) {
         if (!attacker.isAttacking() || attacker.hasHitInCurrentAttack() || !attacker.canHitNow()) {
             return;
@@ -261,9 +291,10 @@ public class FightManager {
     }
 
     private void initializeRound() {
-        int groundY = screenHeight;
+        int groundY = (int)(screenHeight * 0.88); // ← 80% down the screen
         player1Fighter = new Fighter(player1Character, 150, groundY, true, toSpriteFolderName(player1Character.getName()));
         player2Fighter = new Fighter(player2Character, screenWidth - 220, groundY, false, toSpriteFolderName(player2Character.getName()));
+
     }
 
     private String toSpriteFolderName(String characterName) {

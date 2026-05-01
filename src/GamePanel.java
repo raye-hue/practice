@@ -138,6 +138,10 @@ public class GamePanel extends JPanel implements Runnable{
         }
 
         if (gameState == GameState.PLAY) {
+            if (keyH.pausePressed) {
+                fightManager.togglePause();
+                keyH.pausePressed = false;
+            }
             fightManager.update(keyH);
             if (fightManager.consumeReturnToMenuRequest()) {
                 if (arcadeLadderActive) {
@@ -579,13 +583,20 @@ public class GamePanel extends JPanel implements Runnable{
 
     private void handleCharacterSelectInput() {
         if (keyH.menuUpPressed) {
-            selectedCharacterIndex = (selectedCharacterIndex - 1 + roster.length) % roster.length;
+            selectedCharacterIndex = (selectedCharacterIndex - characterGridCols + roster.length) % roster.length;
             keyH.menuUpPressed = false;
         }
-
         if (keyH.menuDownPressed) {
-            selectedCharacterIndex = (selectedCharacterIndex + 1) % roster.length;
+            selectedCharacterIndex = (selectedCharacterIndex + characterGridCols) % roster.length;
             keyH.menuDownPressed = false;
+        }
+        if (keyH.menuLeftPressed) {
+            selectedCharacterIndex = (selectedCharacterIndex - 1 + roster.length) % roster.length;
+            keyH.menuLeftPressed = false;
+        }
+        if (keyH.menuRightPressed) {
+            selectedCharacterIndex = (selectedCharacterIndex + 1) % roster.length;
+            keyH.menuRightPressed = false;
         }
 
         if (!keyH.menuSelectPressed) {
@@ -921,71 +932,129 @@ public class GamePanel extends JPanel implements Runnable{
         g2.setColor(Color.black);
         g2.fillRect(0, 0, screenWidth, screenHeight);
 
-        GameCharacter selected = roster[selectedCharacterIndex];
-        int opponentCount = Math.max(0, roster.length - 1);
-
-        g2.setColor(Color.white);
-        g2.setFont(new Font("Impact", Font.BOLD, 40));
-        String title = "CHARACTER SELECT";
+        // Title
+        g2.setColor(Color.yellow);
+        g2.setFont(new Font("Impact", Font.BOLD, 44));
+        String title = "ARCADE - CHARACTER SELECT";
         FontMetrics titleMetrics = g2.getFontMetrics();
         int titleX = (screenWidth - titleMetrics.stringWidth(title)) / 2;
-        g2.drawString(title, titleX, 120);
+        g2.drawString(title, titleX, 50);
 
-        g2.setColor(selected.getColor());
-        g2.fillRect(90, 155, 90, 90);
+        g2.setColor(new Color(255, 140, 0));
+        g2.setFont(new Font("Impact", Font.BOLD, 24));
+        String sub = "CHOOSE YOUR FIGHTER";
+        FontMetrics subMetrics = g2.getFontMetrics();
+        g2.drawString(sub, (screenWidth - subMetrics.stringWidth(sub)) / 2, 85);
 
-        g2.setColor(Color.white);
-        g2.setFont(new Font("Serif", Font.BOLD, 30));
-        g2.drawString(selected.getName(), 210, 195);
+        // Character grid
+        int boxSize = 110;
+        int spacing = 35;
+        int totalWidth = characterGridCols * boxSize + (characterGridCols - 1) * spacing;
+        int totalHeight = characterGridRows * boxSize + (characterGridRows - 1) * spacing;
+        int startX = (screenWidth - totalWidth) / 2;
+        int startY = (screenHeight - totalHeight) / 2 - 50;
 
-        g2.setFont(new Font("Serif", Font.PLAIN, 22));
-        g2.drawString("Role: " + selected.getRole(), 210, 230);
-        g2.drawString("HP: " + selected.getMaxHp(), 210, 240);
+        for (int row = 0; row < characterGridRows; row++) {
+            for (int col = 0; col < characterGridCols; col++) {
+                int index = row * characterGridCols + col;
+                if (index >= roster.length) continue;
 
-        g2.setFont(new Font("Serif", Font.PLAIN, 18));
-        String prompt = "W/S to cycle characters - Enter/Space to start ladder - Esc/Backspace to go back";
-        FontMetrics promptMetrics = g2.getFontMetrics();
-        int promptX = (screenWidth - promptMetrics.stringWidth(prompt)) / 2;
-        g2.drawString(prompt, promptX, screenHeight - 40);
+                int x = startX + col * (boxSize + spacing);
+                int y = startY + row * (boxSize + spacing);
 
-        g2.setFont(new Font("Serif", Font.PLAIN, 16));
-        String ladderText = "Choose your fighter, then clear the ladder one opponent at a time.";
-        FontMetrics ladderMetrics = g2.getFontMetrics();
-        int ladderX = (screenWidth - ladderMetrics.stringWidth(ladderText)) / 2;
-        g2.drawString(ladderText, ladderX, screenHeight - 58);
-    }
+                GameCharacter chr = roster[index];
+                java.awt.image.BufferedImage chrPortrait = chr.getPortrait();
+                if (chrPortrait != null) {
+                    g2.drawImage(chrPortrait, x, y, x + boxSize, y + boxSize, 0, 0, 90, 90, null);
+                } else {
+                    g2.setColor(chr.getColor());
+                    g2.fillRect(x, y, boxSize, boxSize);
+                }
 
-    private void startArcadeLadder(GameCharacter playerCharacter) {
-        arcadeLadderActive = true;
-        arcadeLadderPlayerCharacter = playerCharacter;
-        arcadeLadderOpponents = buildArcadeLadderOpponents(playerCharacter);
-        arcadeLadderOpponentIndex = 0;
-        selectedPlayMode = "Player vs Computer";
-        startNextArcadeLadderFight();
-    }
+                g2.setColor(Color.white);
+                g2.setFont(new Font("Serif", Font.BOLD, 14));
+                FontMetrics nameMetrics = g2.getFontMetrics();
+                int nameX = x + (boxSize - nameMetrics.stringWidth(chr.getName())) / 2;
+                g2.drawString(chr.getName(), nameX, y + boxSize + 20);
 
-    private GameCharacter[] buildArcadeLadderOpponents(GameCharacter playerCharacter) {
-        ArrayList<GameCharacter> opponents = new ArrayList<>();
-        for (GameCharacter character : roster) {
-            if (character != playerCharacter) {
-                opponents.add(character);
+                // Highlight selected
+                if (index == selectedCharacterIndex) {
+                    g2.setColor(new Color(255, 140, 0));
+                    g2.setStroke(new BasicStroke(4));
+                    g2.drawRect(x - 3, y - 3, boxSize + 6, boxSize + 6);
+                    g2.setStroke(new BasicStroke(1));
+                }
             }
         }
-        return opponents.toArray(new GameCharacter[0]);
-    }
 
-    private void startNextArcadeLadderFight() {
-        if (arcadeLadderOpponentIndex >= arcadeLadderOpponents.length) {
-            endArcadeLadder();
-            return;
+        // Character info panel
+        GameCharacter selected = roster[selectedCharacterIndex];
+        int panelX = 80, panelY = screenHeight - 175;
+        int panelW = screenWidth - 160, panelH = 130;
+        g2.setColor(new Color(20, 20, 20));
+        g2.fillRoundRect(panelX, panelY, panelW, panelH, 10, 10);
+        g2.setColor(new Color(255, 140, 0));
+        g2.setStroke(new BasicStroke(2));
+        g2.drawRoundRect(panelX, panelY, panelW, panelH, 10, 10);
+        g2.setStroke(new BasicStroke(1));
+
+        java.awt.image.BufferedImage portrait = selected.getPortrait();
+        if (portrait != null) {
+            g2.drawImage(portrait, panelX + 12, panelY + 12, panelX + 102, panelY + 102, 0, 0, 90, 90, null);
+        } else {
+            g2.setColor(selected.getColor());
+            g2.fillRoundRect(panelX + 12, panelY + 12, 90, 90, 6, 6);
         }
 
-        GameCharacter opponent = arcadeLadderOpponents[arcadeLadderOpponentIndex];
-        fightManager.reset();
-        fightManager.setLadderProgress(arcadeLadderOpponentIndex + 1, arcadeLadderOpponents.length);
-        fightManager.startMatch(arcadeLadderPlayerCharacter, opponent, selectedPlayMode);
-        gameState = GameState.PLAY;
-    }
+        g2.setColor(new Color(255, 140, 0));
+        g2.setFont(new Font("Impact", Font.PLAIN, 20));
+        g2.drawString(selected.getName(), panelX + 115, panelY + 30);
+        g2.setColor(new Color(180, 180, 180));
+        g2.setFont(new Font("Serif", Font.PLAIN, 13));
+        g2.drawString(selected.getRole() + "  |  HP: " + selected.getMaxHp(), panelX + 115, panelY + 52);
+        g2.setColor(new Color(210, 210, 210));
+        g2.setFont(new Font("Serif", Font.PLAIN, 13));
+        drawWrappedText(g2, selected.getBio(), panelX + 115, panelY + 75, panelW - 200, 18);
+
+        // Prompt
+        g2.setColor(Color.white);
+        g2.setFont(new Font("Serif", Font.PLAIN, 16));
+        String prompt = "Arrow Keys/WASD to move - Enter/Space to start ladder - Esc/Backspace to go back";
+        FontMetrics promptMetrics = g2.getFontMetrics();
+        g2.drawString(prompt, (screenWidth - promptMetrics.stringWidth(prompt)) / 2, screenHeight - 10);
+        }
+
+        private void startArcadeLadder(GameCharacter playerCharacter) {
+            arcadeLadderActive = true;
+            arcadeLadderPlayerCharacter = playerCharacter;
+            arcadeLadderOpponents = buildArcadeLadderOpponents(playerCharacter);
+            arcadeLadderOpponentIndex = 0;
+            selectedPlayMode = "Player vs Computer";
+            startNextArcadeLadderFight();
+        }
+
+        private GameCharacter[] buildArcadeLadderOpponents(GameCharacter playerCharacter) {
+            ArrayList<GameCharacter> opponents = new ArrayList<>();
+            for (GameCharacter character : roster) {
+                if (character != playerCharacter) {
+                    opponents.add(character);
+                }
+            }
+            return opponents.toArray(new GameCharacter[0]);
+        }
+
+        private void startNextArcadeLadderFight() {
+            if (arcadeLadderOpponentIndex >= arcadeLadderOpponents.length) {
+                endArcadeLadder();
+                return;
+            }
+
+            GameCharacter opponent = arcadeLadderOpponents[arcadeLadderOpponentIndex];
+            fightManager.reset();
+            fightManager.setLadderProgress(arcadeLadderOpponentIndex + 1, arcadeLadderOpponents.length);
+            fightManager.startMatch(arcadeLadderPlayerCharacter, opponent, selectedPlayMode);
+            gameState = GameState.PLAY;
+        }
 
     private void endArcadeLadder() {
         arcadeLadderActive = false;

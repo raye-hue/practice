@@ -179,18 +179,38 @@ public class Fighter {
         return new Rectangle(attackX, attackY, attackWidth, attackHeight);
     }
 
+    private int getVisualOffsetY() {
+        String name = battleCharacter.getTemplate().getName();
+        if ("hide the pain harold".equalsIgnoreCase(name)) {
+            return 20; 
+        }
+        if ("gigachad".equalsIgnoreCase(name)) {
+            return 0;
+        }
+        if ("doge".equalsIgnoreCase(name)) {
+            return 0;
+        }
+
+        if ("grumpy cat".equalsIgnoreCase(name)) {
+            return 0;
+        }
+        return 0;
+    }
+
     public void draw(Graphics2D g2) {
         BufferedImage frame = getCurrentFrame();
+        int offsetY = getVisualOffsetY();
+
         if (frame == null) {
             g2.setColor(fallbackColor);
-            g2.fillRect(x, y, getWidth(), getHeight());
+            g2.fillRect(x, y + offsetY, getWidth(), getHeight());
             return;
         }
 
         if (facingRight) {
-            g2.drawImage(frame, x, y, getWidth(), getHeight(), null);
+            g2.drawImage(frame, x, y + offsetY, getWidth(), getHeight(), null);
         } else {
-            g2.drawImage(frame, x + getWidth(), y, -getWidth(), getHeight(), null);
+            g2.drawImage(frame, x + getWidth(), y + offsetY, -getWidth(), getHeight(), null);
         }
     }
 
@@ -462,9 +482,20 @@ public class Fighter {
         }
 
         if ("doge".equalsIgnoreCase(template.getName())) {
-            return 1.35f;
+            return 1.50f;
         }
 
+        if ("hide the pain harold".equalsIgnoreCase(template.getName())) {
+        return 2.0f;
+        }
+
+        if ("grumpy cat".equalsIgnoreCase(template.getName())) {
+        return 1.50f;
+        }
+
+        
+
+       
         return 1.0f;
     }
 }

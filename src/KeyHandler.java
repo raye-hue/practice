@@ -9,6 +9,7 @@ public class KeyHandler implements KeyListener{
     public boolean menuUpPressed, menuDownPressed, menuLeftPressed, menuRightPressed, menuSelectPressed;
     public boolean menuBackPressed;
     public boolean anyKeyPressed;
+    public boolean pausePressed = false;
     @Override
     public void keyTyped(KeyEvent e) {
 
@@ -68,6 +69,10 @@ public class KeyHandler implements KeyListener{
         if(code == KeyEvent.VK_L){
             p2AttackPressed = true;
         }
+
+        if (code == KeyEvent.VK_P) {
+            pausePressed = true;
+        }
     }
 
     @Override
@@ -117,6 +122,9 @@ public class KeyHandler implements KeyListener{
         }
         if(code == KeyEvent.VK_L){
             p2AttackPressed = false;
+        }
+        if (code == KeyEvent.VK_P) {
+            pausePressed = false;
         }
     }
 
