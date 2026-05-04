@@ -10,6 +10,10 @@ import javax.imageio.ImageIO;
 
 public class FightManager {
 
+    public enum AIDifficulty {
+        EASY, MEDIUM, HARD
+    }
+
     private static final int TARGET_FPS = 60;
     private static final int ROUND_SECONDS = 60;
     private static final int ROUND_TIME_FRAMES = TARGET_FPS * ROUND_SECONDS;
@@ -41,6 +45,7 @@ public class FightManager {
     private int player2RoundsWon = 0;
 
     private boolean paused = false;
+    private AIDifficulty aiDifficulty = AIDifficulty.MEDIUM;
 
     public FightManager(int screenWidth, int screenHeight) {
         this.screenWidth = screenWidth;
@@ -101,19 +106,50 @@ public class FightManager {
         boolean p2Jump;
 
         if (playerVsCpu) {
-            int distance = player1Fighter.getX() - player2Fighter.getX();
-            p2Left = distance < -20;
-            p2Right = distance > 20;
-            p2Jump = random.nextInt(140) == 0;
+        int distance = player1Fighter.getX() - player2Fighter.getX();
 
-            if (Math.abs(distance) < 100 && random.nextInt(24) == 0) {
-                player2Fighter.tryAttack();
-            }
-        } else {
-            p2Left = keyH.p2LeftPressed;
-            p2Right = keyH.p2RightPressed;
-            p2Jump = keyH.p2JumpPressed;
+        switch (aiDifficulty) {
+            case EASY:
+                p2Left = distance < -20;
+                p2Right = distance > 20;
+                p2Jump = random.nextInt(300) == 0;
+                if (Math.abs(distance) < 100 && random.nextInt(60) == 0) {
+                    player2Fighter.tryAttack(); // attacks slowly
+                }
+                break;
+
+            case MEDIUM:
+                p2Left = distance < -20;
+                p2Right = distance > 20;
+                p2Jump = random.nextInt(140) == 0;
+                if (Math.abs(distance) < 100 && random.nextInt(24) == 0) {
+                    player2Fighter.tryAttack();
+                }
+                break;
+
+            case HARD:
+                p2Left = distance < -10;
+                p2Right = distance > 10;
+                p2Jump = random.nextInt(60) == 0;   
+                if (Math.abs(distance) < 120 && random.nextInt(10) == 0) {
+                    player2Fighter.tryAttack(); 
+                }
+                break;
+
+            default:
+                p2Left = distance < -20;
+                p2Right = distance > 20;
+                p2Jump = random.nextInt(140) == 0;
+                if (Math.abs(distance) < 100 && random.nextInt(24) == 0) {
+                    player2Fighter.tryAttack();
+                }
+                break;
         }
+        } else {
+                p2Left = keyH.p2LeftPressed;
+                p2Right = keyH.p2RightPressed;
+                p2Jump = keyH.p2JumpPressed;
+            }
 
         player1Fighter.updateMovement(keyH.p1LeftPressed, keyH.p1RightPressed, keyH.p1JumpPressed, 16, screenWidth - 16);
         player2Fighter.updateMovement(p2Left, p2Right, p2Jump, 16, screenWidth - 16);
@@ -184,12 +220,9 @@ public class FightManager {
 
         g2.setColor(Color.white);
         g2.setFont(new Font("Serif", Font.PLAIN, 16));
-        String controlText = "P1: A/D move, W jump, F attack | P2: Left/Right move, Up jump, L attack";
+        String controlText = "P1: A/D move, W jump, F attack | P2: Left/Right move, Up jump, L attack, P pause";
         g2.drawString(controlText, 20, 28);
 
-        if ("Player vs Computer".equals(selectedPlayMode)) {
-            g2.drawString("CPU controls Player 2", 20, 48);
-        }
 
         String opponentLabel = "Player vs Computer".equals(selectedPlayMode) ? "CPU" : "P2";
         String scoreText = "Score: P1 " + player1RoundsWon + " - " + player2RoundsWon + " " + opponentLabel;
@@ -285,6 +318,10 @@ public class FightManager {
 
     public boolean isPaused() {
         return paused;
+    }
+
+     public void setAIDifficulty(AIDifficulty difficulty) {
+        this.aiDifficulty = difficulty;
     }
 
     private void resolveAttackHit(Fighter attacker, Fighter defender) {

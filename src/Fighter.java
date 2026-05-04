@@ -165,8 +165,10 @@ public class Fighter {
     }
 
     public Rectangle getAttackBox() {
-        int attackWidth = 36;
-        int attackHeight = 40;
+        float scale = drawWidth / (float) BASE_WIDTH;
+
+        int attackWidth = Math.round(20 * scale);
+        int attackHeight = Math.round(30 * scale);
         int attackY = y + (getHeight() / 4);
         int attackX;
 
@@ -179,25 +181,38 @@ public class Fighter {
         return new Rectangle(attackX, attackY, attackWidth, attackHeight);
     }
 
-    private int getVisualOffsetY() {
+        private int getVisualOffsetY() {
         String name = battleCharacter.getTemplate().getName();
-        if ("hide the pain harold".equalsIgnoreCase(name)) {
-            return 20; 
-        }
+        
         if ("gigachad".equalsIgnoreCase(name)) {
             return 0;
+        }
+        if ("hide the pain harold".equalsIgnoreCase(name)) {
+            return 20;
+        }
+        if ("skibidi toilet".equalsIgnoreCase(name)) {
+            return 15;
+        }
+        if ("crying wojak".equalsIgnoreCase(name)) {
+            return -15;
+        }
+        if ("trollface".equalsIgnoreCase(name)) {
+            return 15;
         }
         if ("doge".equalsIgnoreCase(name)) {
             return 0;
         }
-
         if ("grumpy cat".equalsIgnoreCase(name)) {
+            return 0;
+        }
+        if ("pepe the frog".equalsIgnoreCase(name)) {
             return 0;
         }
         return 0;
     }
 
-    public void draw(Graphics2D g2) {
+    
+        public void draw(Graphics2D g2) {
         BufferedImage frame = getCurrentFrame();
         int offsetY = getVisualOffsetY();
 
@@ -492,6 +507,24 @@ public class Fighter {
         if ("grumpy cat".equalsIgnoreCase(template.getName())) {
         return 1.50f;
         }
+
+        if ("skibidi toilet".equalsIgnoreCase(template.getName())) {
+        return 2.0f;
+        }
+
+        if ("crying wojak".equalsIgnoreCase(template.getName())) {
+        return 2.0f;
+        }
+
+        if ("trollface".equalsIgnoreCase(template.getName())) {
+        return 2.0f;
+        }
+
+        if ("pepe the frog".equalsIgnoreCase(template.getName())) {
+        return 1.50f;
+        }
+
+        
 
         return 1.0f;
     }

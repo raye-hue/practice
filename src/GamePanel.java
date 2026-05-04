@@ -14,10 +14,12 @@ public class GamePanel extends JPanel implements Runnable{
         PVP_P1_SELECT,
         PVP_P2_SELECT,
         AI_SELECT,
+        AI_DIFFICULTY,
         PLAY,
         ARCADE,
         ARCADE_GAME_OVER,
-        PAUSE
+        PAUSE,
+        CREDITS
     }
 
     final int originalTileSize = 26;
@@ -38,14 +40,21 @@ public class GamePanel extends JPanel implements Runnable{
 
     GameState gameState = GameState.MENU;
     int menuIndex = 0;
-    String[] menuItems = {"Play", "Arcade", "Options", "Quit"};
+    String[] menuItems = {"Play", "Arcade", "Credits", "Quit"};
     int playModeIndex = 0;
     String[] playModeItems = {"Player vs Player", "Player vs Computer"};
     String selectedPlayMode = "Player vs Player";
+    int difficultyIndex = 0;
+    String[] difficultyItems = {"Easy", "Medium", "Hard"};
+    FightManager.AIDifficulty selectedDifficulty = FightManager.AIDifficulty.MEDIUM;
     private final AudioManager audioManager = new AudioManager();
     private final String titleMusicPath = "assets/music/title.wav";
     private final float titleMusicVolumePercent = 30f;
     private GameState previousGameState = null;
+    private float creditsScrollY = 0;
+    private float[] starX, starY, starSpeed;
+    private boolean creditsInitialized = false;
+    private int creditsPauseTimer = 0;
     int playerX = 100;
     int playerY = 100;
     int playerSpeed = 4;
@@ -175,6 +184,11 @@ public class GamePanel extends JPanel implements Runnable{
             return;
         }
 
+        if (gameState == GameState.AI_DIFFICULTY){
+            handleAiDifficultyInput();
+            return;
+        }
+
         if(gameState == GameState.AI_SELECT){
             handleAiCharacterSelectInput();
             return;
@@ -194,6 +208,33 @@ public class GamePanel extends JPanel implements Runnable{
             gameState = GameState.PLAY;
             keyH.resetKeys();
         }
+
+       if (gameState == GameState.CREDITS) {
+            if (!creditsInitialized) initCredits();
+
+            // Stars always keep moving
+            for (int i = 0; i < 120; i++) {
+                starY[i] += starSpeed[i];
+                if (starY[i] > screenHeight) {
+                    starY[i] = 0;
+                    starX[i] = (float)(Math.random() * screenWidth);
+                }
+            }
+
+            // If pausing at the end, count down then restart
+            if (creditsPauseTimer > 0) {
+                creditsPauseTimer--;
+                if (creditsPauseTimer == 0) {
+                    creditsScrollY = screenHeight; // restart
+                }
+                return; // stop here, don't scroll while pausing
+            }
+
+            // Only scroll if not pausing
+            creditsScrollY -= 0.8f;
+            return;
+        }
+
     }
 
     private void updateMenuMusic() {
@@ -232,7 +273,7 @@ public class GamePanel extends JPanel implements Runnable{
             return true;
         }
 
-        if (gameState == GameState.MODE_SELECT || gameState == GameState.ARCADE || gameState == GameState.PAUSE) {
+        if (gameState == GameState.MODE_SELECT || gameState == GameState.ARCADE || gameState == GameState.CREDITS || gameState == GameState.PAUSE) {
             gameState = GameState.MENU;
             keyH.resetKeys();
             return true;
@@ -246,6 +287,12 @@ public class GamePanel extends JPanel implements Runnable{
 
         if (gameState == GameState.AI_SELECT) {
             gameState = GameState.MODE_SELECT;
+            keyH.resetKeys();
+            return true;
+        }
+
+        if (gameState == GameState.AI_DIFFICULTY) {
+            gameState = GameState.AI_SELECT;
             keyH.resetKeys();
             return true;
         }
@@ -284,6 +331,12 @@ public class GamePanel extends JPanel implements Runnable{
             return;
         }
 
+        if (gameState == GameState.AI_DIFFICULTY){
+            drawAiDifficulty(g2);
+            g2.dispose();
+            return;
+        }
+
 
         if (gameState == GameState.PVP_P1_SELECT || gameState == GameState.PVP_P2_SELECT) {
             drawPvpCharacterSelect(g2);
@@ -308,6 +361,13 @@ public class GamePanel extends JPanel implements Runnable{
             g2.dispose();
             return;
         }
+        
+        if (gameState == GameState.CREDITS) {
+            drawCredits(g2);
+            g2.dispose();
+            return;
+        }
+        
 
         if (gameState == GameState.PLAY) {
             fightManager.draw(g2);
@@ -453,7 +513,8 @@ public class GamePanel extends JPanel implements Runnable{
             endArcadeLadder();
             gameState = GameState.ARCADE;
         } else if (menuIndex == 2) {
-            gameState = GameState.PAUSE;
+            creditsInitialized = false;
+            gameState = GameState.CREDITS;
         } else if (menuIndex == 3) {
             audioManager.stopMusic();
             System.exit(0);
@@ -575,6 +636,29 @@ public class GamePanel extends JPanel implements Runnable{
         player2Character = roster[aiIndex];
 
         fightManager.reset();
+        gameState = GameState.AI_DIFFICULTY;
+        keyH.resetKeys();
+    }
+    private void handleAiDifficultyInput() {
+        if (keyH.menuUpPressed) {
+            difficultyIndex = (difficultyIndex - 1 + difficultyItems.length) % difficultyItems.length;
+            keyH.menuUpPressed = false;
+        }
+        if (keyH.menuDownPressed) {
+            difficultyIndex = (difficultyIndex + 1) % difficultyItems.length;
+            keyH.menuDownPressed = false;
+        }
+
+        if (!keyH.menuSelectPressed) return;
+
+        switch (difficultyIndex) {
+            case 0 -> selectedDifficulty = FightManager.AIDifficulty.EASY;
+            case 1 -> selectedDifficulty = FightManager.AIDifficulty.MEDIUM;
+            case 2 -> selectedDifficulty = FightManager.AIDifficulty.HARD;
+        }
+
+        fightManager.reset();
+        fightManager.setAIDifficulty(selectedDifficulty);
         fightManager.startMatch(player1Character, player2Character, "Player vs Computer");
         gameState = GameState.PLAY;
         keyH.resetKeys();
@@ -703,6 +787,64 @@ public class GamePanel extends JPanel implements Runnable{
         FontMetrics promptMetrics = g2.getFontMetrics();
         int promptX = (screenWidth - promptMetrics.stringWidth(prompt)) / 2;
         g2.drawString(prompt, promptX, screenHeight - 10);
+    }
+    private void drawAiDifficulty(Graphics2D g2) {
+        g2.setColor(Color.black);
+        g2.fillRect(0, 0, screenWidth, screenHeight);
+
+        // Title
+        g2.setFont(new Font("Impact", Font.BOLD, 42));
+        g2.setColor(new Color(180, 20, 0));
+        String title = "SELECT DIFFICULTY";
+        FontMetrics tm = g2.getFontMetrics();
+        int titleX = (screenWidth - tm.stringWidth(title)) / 2;
+        g2.drawString(title, titleX + 3, 153);
+        g2.drawString(title, titleX - 3, 153);
+        g2.setColor(new Color(245, 184, 0));
+        g2.drawString(title, titleX, 150);
+
+        int btnWidth = 270;
+        int btnHeight = 50;
+        int btnX = (screenWidth - btnWidth) / 2;
+        int startY = 240;
+        int gap = 65;
+
+        g2.setFont(new Font("Impact", Font.BOLD, 28));
+        FontMetrics bm = g2.getFontMetrics();
+
+
+        for (int i = 0; i < difficultyItems.length; i++) {
+            int btnY = startY + (i * gap);
+
+            if (i == difficultyIndex) {
+                g2.setColor(new Color(30, 30, 0));
+                g2.fillRoundRect(btnX, btnY, btnWidth, btnHeight, 10, 10);
+                g2.setColor(new Color(255, 215, 0));
+                g2.setStroke(new BasicStroke(2));
+                g2.drawRoundRect(btnX, btnY, btnWidth, btnHeight, 10, 10);
+            } else {
+                g2.setColor(new Color(15, 15, 15));
+                g2.fillRoundRect(btnX, btnY, btnWidth, btnHeight, 10, 10);
+                g2.setColor(new Color(136, 102, 0));
+                g2.setStroke(new BasicStroke(1));
+                g2.drawRoundRect(btnX, btnY, btnWidth, btnHeight, 10, 10);
+            }
+
+            String item = difficultyItems[i];
+            int textX = btnX + (btnWidth - bm.stringWidth(item)) / 2;
+            int textY = btnY + (btnHeight + bm.getAscent() - bm.getDescent()) / 2;
+            g2.setColor(i == difficultyIndex ? new Color(255, 215, 0) : new Color(200, 160, 0));
+            g2.drawString(item, textX, textY);
+
+          
+        }
+
+        g2.setStroke(new BasicStroke(1));
+        g2.setColor(new Color(200, 160, 0));
+        g2.setFont(new Font("Serif", Font.PLAIN, 18));
+        String prompt = "W/S or Arrow Keys to move - Enter/Space to select - Esc/Backspace to go back";
+        FontMetrics pm = g2.getFontMetrics();
+        g2.drawString(prompt, (screenWidth - pm.stringWidth(prompt)) / 2, screenHeight - 40);
     }
 
     private void drawPvpCharacterSelect(Graphics2D g2) {
@@ -864,6 +1006,154 @@ public class GamePanel extends JPanel implements Runnable{
             g2.drawString("Esc/Backspace to return to menu", 150, 365);
         }
 
+        private void initCredits() {
+            creditsScrollY = screenHeight;
+            creditsPauseTimer = 0;
+            starX = new float[120];
+            starY = new float[120];
+            starSpeed = new float[120];
+            for (int i = 0; i < 120; i++) {
+                starX[i] = (float)(Math.random() * screenWidth);
+                starY[i] = (float)(Math.random() * screenHeight);
+                starSpeed[i] = (float)(Math.random() * 1.5f + 0.3f);
+            }
+            creditsInitialized = true;
+        }
+
+        private void drawCredits(Graphics2D g2) {
+
+             if (starSpeed == null) {
+                initCredits();
+             }
+            g2.setColor(Color.black);
+            g2.fillRect(0, 0, screenWidth, screenHeight);
+
+            for (int i = 0; i < 120; i++) {
+                float speed = starSpeed[i];
+                int size = speed > 1.2f ? 3 : speed > 0.7f ? 2 : 1;
+                int brightness = speed > 1.2f ? 255 : speed > 0.7f ? 180 : 110;
+                g2.setColor(new Color(brightness, brightness, brightness));
+                g2.fillRect((int)starX[i], (int)starY[i], size, size);
+            }
+
+            g2.setClip(0, 60, screenWidth, screenHeight - 100);
+
+            float y = creditsScrollY;
+
+            g2.setFont(new Font("Impact", Font.BOLD, 58));
+            g2.setColor(new Color(180, 20, 0));
+            String title = "CREDITS";
+            FontMetrics tm = g2.getFontMetrics();
+            int titleX = (screenWidth - tm.stringWidth(title)) / 2;
+            g2.drawString(title, titleX + 3, (int)y + 3);
+            g2.setColor(new Color(245, 184, 0));
+            g2.drawString(title, titleX, (int)y);
+            y += 80;
+
+            g2.setColor(new Color(245, 184, 0));
+            g2.setStroke(new BasicStroke(2));
+            g2.drawLine(screenWidth / 4, (int)y, screenWidth * 3 / 4, (int)y);
+            y += 30;
+
+            y = drawCreditSection(g2, "TEAM", new String[][]{
+                {"Lawrance Isaac Lapig",      "Project Manager / Backend Developer"},
+                {"Cedric Villareal",      "Backend Developer"},
+                {"Xander Maurice Ortiz",   "Graphics Artist"},
+                {"Chirsten Raye Rizal",     "Graphics Artist"},
+            }, y);
+
+            y += 20;
+            g2.setColor(new Color(245, 184, 0));
+            g2.setStroke(new BasicStroke(2));
+            g2.drawLine(screenWidth / 4, (int)y, screenWidth * 3 / 4, (int)y);
+            y += 30;
+
+            y = drawCreditSection(g2, "TOOLS & RESOURCES", new String[][]{
+                {"Ezgif",   "Sprite Cutter"},
+                {"Picsart", "Background Remover"},
+                {"Gemini",  "Sprite Generated Images"},
+                {"Chat GPT", "Animated Background Generator"},
+                {"VS Code", "IDE"},
+                {"Discord", "Communication"},
+            }, y);
+
+            y += 20;
+            g2.setColor(new Color(245, 184, 0));
+            g2.setStroke(new BasicStroke(2));
+            g2.drawLine(screenWidth / 4, (int)y, screenWidth * 3 / 4, (int)y);
+            y += 30;
+
+            y = drawCreditSection(g2, "SPECIAL THANKS", new String[][]{
+                {"To Sir Khai", "Thank you for your guidance and patience throughout this journey."},
+                {"To Our Parents & Family",  "Our greatest supporters, in every way that matters."},
+                {"To Lawrence & Cedric",  "Thank you for turning countless hours of code into an epic fighting experience."},
+                {"To Xander & Chirsten",  "Thank you for crafting the visuals that made every character unforgettable."}
+            }, y);
+
+
+            y += 40;
+            g2.setColor(new Color(245, 184, 0));
+            g2.setStroke(new BasicStroke(2));
+            g2.drawLine(screenWidth / 4, (int)y, screenWidth * 3 / 4, (int)y);
+            y += 50;
+
+            g2.setFont(new Font("Impact", Font.BOLD, 32));
+            g2.setColor(new Color(245, 184, 0));
+            String thanks = "Thank you for playing!";
+            FontMetrics thm = g2.getFontMetrics();
+            g2.drawString(thanks, (screenWidth - thm.stringWidth(thanks)) / 2, (int)y);
+            y += 40;
+
+            g2.setFont(new Font("Serif", Font.ITALIC, 20));
+            g2.setColor(Color.white);
+            String ph = "Made with teamwork and perseverance";
+            FontMetrics phm = g2.getFontMetrics();
+            g2.drawString(ph, (screenWidth - phm.stringWidth(ph)) / 2, (int)y);
+            y += 30;
+
+            g2.setFont(new Font("Serif", Font.PLAIN, 14));
+            g2.setColor(new Color(150, 150, 150));
+            String ver = "Sigma Showdown v1.0";
+            FontMetrics vm = g2.getFontMetrics();
+            g2.drawString(ver, (screenWidth - vm.stringWidth(ver)) / 2, (int)y);
+
+            g2.setClip(null);
+
+            if (creditsScrollY < -(y + 150) && creditsPauseTimer == 0) {
+                creditsPauseTimer = 60 * 3; // 3 seconds at 60fps
+            }
+
+            g2.setColor(new Color(0, 0, 0, 180));
+            g2.fillRect(0, screenHeight - 50, screenWidth, 50);
+            g2.setColor(new Color(200, 160, 0));
+            g2.setFont(new Font("Serif", Font.PLAIN, 16));
+            String prompt = "Esc/Backspace to go back";
+            FontMetrics pm = g2.getFontMetrics();
+            g2.drawString(prompt, (screenWidth - pm.stringWidth(prompt)) / 2, screenHeight - 18);
+        }
+
+        private float drawCreditSection(Graphics2D g2, String sectionTitle, String[][] entries, float y) {
+            g2.setFont(new Font("Impact", Font.BOLD, 24));
+            g2.setColor(new Color(255, 140, 0));
+            FontMetrics sm = g2.getFontMetrics();
+            g2.drawString(sectionTitle, (screenWidth - sm.stringWidth(sectionTitle)) / 2, (int)y);
+            y += 35;
+
+            for (String[] entry : entries) {
+                g2.setFont(new Font("Impact", Font.PLAIN, 20));
+                g2.setColor(new Color(245, 184, 0));
+                FontMetrics nm = g2.getFontMetrics();
+                g2.drawString(entry[0], (screenWidth - nm.stringWidth(entry[0])) / 2, (int)y);
+                y += 22;
+
+                g2.setFont(new Font("Serif", Font.ITALIC, 15));
+                g2.setColor(new Color(200, 200, 200));
+                FontMetrics rm = g2.getFontMetrics();
+                g2.drawString(entry[1], (screenWidth - rm.stringWidth(entry[1])) / 2, (int)y);
+                y += 35;
+            }
+            return y;
+        }
         private void drawModeSelect(Graphics2D g2) {
         g2.setColor(Color.black);
         g2.fillRect(0, 0, screenWidth, screenHeight);
