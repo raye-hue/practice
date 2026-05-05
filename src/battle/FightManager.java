@@ -338,7 +338,7 @@ public class FightManager {
             g2.drawString(ladderText, screenWidth - 20 - ladderMetrics.stringWidth(ladderText), 28);
         }
 
-        g2.drawString("P to", 20, screenHeight - 18);
+        g2.drawString("P to PAUSE", 20, screenHeight - 18);
 
         if (!roundResultText.isEmpty()) {
             g2.setFont(new Font("Impact", Font.BOLD, 44));
