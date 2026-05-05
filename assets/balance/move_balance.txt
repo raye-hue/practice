@@ -1,0 +1,26 @@
+# Format: Character Name|Move Name|damage=1.0|mana=1.0|cooldown=1.0
+# Values above 1.0 buff a move. Values below 1.0 nerf it.
+
+Doge|Such Strike|damage=1.0|mana=1.0|cooldown=1.0
+Doge|Much Power|damage=1.0|mana=1.0|cooldown=1.0
+
+Pepe the Frog|Feels Good Man|damage=1.0|mana=1.0|cooldown=1.0
+Pepe the Frog|Rare Pepe|damage=1.0|mana=1.0|cooldown=1.0
+
+Grumpy Cat|Nope Swipe|damage=1.0|mana=1.0|cooldown=1.0
+Grumpy Cat|Eternal Grump|damage=1.0|mana=1.0|cooldown=1.0
+
+Hide the Pain Harold|Hidden Suffering|damage=1.0|mana=1.0|cooldown=1.0
+Hide the Pain Harold|Burnout Burst|damage=1.0|mana=1.0|cooldown=1.0
+
+Gigachad|Sigma Punch|damage=1.0|mana=1.0|cooldown=1.0
+Gigachad|Chad Slam|damage=1.0|mana=1.0|cooldown=1.0
+
+Skibidi Toilet|Toilet Spin|damage=1.0|mana=1.0|cooldown=1.0
+Skibidi Toilet|Skibidi Overload|damage=1.0|mana=1.0|cooldown=1.0
+
+Crying Wojak|Inner Rage|damage=1.0|mana=1.0|cooldown=1.0
+Crying Wojak|Mental Breakdown|damage=1.0|mana=1.0|cooldown=1.0
+
+Trollface|Minor Trolling|damage=1.0|mana=1.0|cooldown=1.0
+Trollface|Troll Logic|damage=1.0|mana=1.0|cooldown=1.0

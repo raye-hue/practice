@@ -1,0 +1,18 @@
+package battle;
+
+public enum MoveEffect {
+    DAMAGE,
+    HEAL,
+    DEFEND,
+    DAMAGE_AND_DEBUFF,
+    DAMAGE_AND_CRIT_CHANCE,
+    MULTI_HIT_DAMAGE,
+    DAMAGE_AND_SKIP_CHANCE,
+    BUFF_ATTACK,
+    DAMAGE_AND_SELF_DAMAGE,
+    RAGE_SCALING,
+    TRAP,
+    CONDITIONAL_DAMAGE_OR_HEAL,
+    RANDOM_EFFECT
+}
+
