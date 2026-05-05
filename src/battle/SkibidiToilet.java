@@ -29,14 +29,14 @@ public class SkibidiToilet extends GameCharacter {
         super(
                 "Skibidi Toilet",
                 "Chaos Multi-hit",
-                100,
+                145,
                 60,
                 17,
                 8,
                 new Color(200, 200, 200),
                 new Move[]{
                         new Move("Toilet Spin", 5, 10, 10, MoveEffect.MULTI_HIT_DAMAGE, "Three random hits", 540, "assets/sfx/splash.wav"),
-                    new Move("Skibidi Overload", 35, 55, 18, MoveEffect.RANDOM_EFFECT, "Randomized overload effect", 1440)
+                    new Move("Skibidi Overload", 35, 55, 18, MoveEffect.RANDOM_EFFECT, "Randomized overload effect", 1200)
                 },
                 "The personification of modern sensory overload. This fighter thrives on repetitive, high-speed chaos and psychological disorientation, overwhelming the opponent’s focus until their ability to react completely breaks down."
         );

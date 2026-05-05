@@ -113,9 +113,14 @@ public class FightManager {
             roundOverDelayFrames--;
             if (roundOverDelayFrames == 0) {
                 if (matchOver) {
-                    // Instead of immediately returning to menu, show rematch/exit prompt
-                    rematchMenuActive = true;
-                    rematchMenuIndex = 0;
+                    // In ladder mode, automatically signal return (so caller can progress to next opponent)
+                    if (ladderMode) {
+                        returnToMenuRequested = true;
+                    } else {
+                        // Otherwise show rematch/exit prompt
+                        rematchMenuActive = true;
+                        rematchMenuIndex = 0;
+                    }
                 } else {
                     startNextRound(keyH);
                 }
@@ -974,6 +979,14 @@ public class FightManager {
         int groundY = screenHeight;
         player1Fighter = new Fighter(player1Character, 150, groundY, true, getSpriteFolderName(player1Character));
         player2Fighter = new Fighter(player2Character, screenWidth - 220, groundY, false, getSpriteFolderName(player2Character));
+
+        // Start each match with ultimates already on cooldown so they cannot be used immediately.
+        if (player1Fighter.getBattleCharacter().getTemplate().getUltimate() != null) {
+            player1Fighter.getBattleCharacter().startMoveCooldown(1);
+        }
+        if (player2Fighter.getBattleCharacter().getTemplate().getUltimate() != null) {
+            player2Fighter.getBattleCharacter().startMoveCooldown(1);
+        }
 
         // Determine current round number based on rounds already won
         currentRoundNumber = Math.max(1, player1RoundsWon + player2RoundsWon + 1);

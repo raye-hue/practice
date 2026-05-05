@@ -26,6 +26,9 @@ public class GamePanel extends JPanel implements Runnable{
         PLAY,
         ARCADE,
         ARCADE_GAME_OVER,
+        ARCADE_LADDER_PREVIEW,
+        ARCADE_NEXT_PREVIEW,
+        ARCADE_VICTORY,
         PAUSE,
         CREDITS
     }
@@ -119,6 +122,8 @@ public class GamePanel extends JPanel implements Runnable{
     GameCharacter[] arcadeLadderOpponents = new GameCharacter[0];
     int arcadeLadderOpponentIndex = 0;
     String arcadeGameOverText = "";
+    int arcadeOpponentCount = 0;
+    String arcadeVictoryPlayerName = "";
     FightManager fightManager = new FightManager(screenWidth, screenHeight);
     public GamePanel(){
         this.setPreferredSize(new Dimension(screenWidth, screenHeight));
@@ -202,9 +207,12 @@ public class GamePanel extends JPanel implements Runnable{
             if (fightManager.consumeReturnToMenuRequest()) {
                 if (arcadeLadderActive) {
                     if (fightManager.didPlayer1Win()) {
+                        // Advance to next opponent but show a brief preview screen first
                         arcadeLadderOpponentIndex++;
                         if (arcadeLadderOpponentIndex < arcadeLadderOpponents.length) {
-                            startNextArcadeLadderFight();
+                            // Reset fight manager state and show next-opponent preview
+                            fightManager.reset();
+                            gameState = GameState.ARCADE_NEXT_PREVIEW;
                         } else {
                             endArcadeLadderVictory();
                         }
@@ -228,6 +236,21 @@ public class GamePanel extends JPanel implements Runnable{
 
         if (gameState == GameState.ARCADE_GAME_OVER) {
             handleArcadeGameOverInput();
+            return;
+        }
+
+        if (gameState == GameState.ARCADE_LADDER_PREVIEW) {
+            handleArcadeLadderPreviewInput();
+            return;
+        }
+
+        if (gameState == GameState.ARCADE_NEXT_PREVIEW) {
+            handleArcadeNextPreviewInput();
+            return;
+        }
+
+        if (gameState == GameState.ARCADE_VICTORY) {
+            handleArcadeVictoryInput();
             return;
         }
 
@@ -414,6 +437,24 @@ public class GamePanel extends JPanel implements Runnable{
 
         if (gameState == GameState.ARCADE_GAME_OVER) {
             drawArcadeGameOver(g2);
+            g2.dispose();
+            return;
+        }
+
+        if (gameState == GameState.ARCADE_LADDER_PREVIEW) {
+            drawArcadeLadderPreview(g2);
+            g2.dispose();
+            return;
+        }
+
+        if (gameState == GameState.ARCADE_NEXT_PREVIEW) {
+            drawArcadeNextPreview(g2);
+            g2.dispose();
+            return;
+        }
+
+        if (gameState == GameState.ARCADE_VICTORY) {
+            drawArcadeVictory(g2);
             g2.dispose();
             return;
         }
@@ -1442,10 +1483,8 @@ public class GamePanel extends JPanel implements Runnable{
             arcadeLadderOpponents = buildArcadeLadderOpponents(playerCharacter);
             arcadeLadderOpponentIndex = 0;
             selectedPlayMode = "Player vs Computer";
-            // Start first fight directly without map select
-            if (arcadeLadderOpponents.length > 0) {
-                startNextArcadeLadderFight();
-            }
+            // Show the ladder preview screen first (list of opponents)
+            gameState = GameState.ARCADE_LADDER_PREVIEW;
         }
 
         private GameCharacter[] buildArcadeLadderOpponents(GameCharacter playerCharacter) {
@@ -1582,12 +1621,14 @@ public class GamePanel extends JPanel implements Runnable{
     }
 
     private void endArcadeLadderVictory() {
+        arcadeOpponentCount = arcadeLadderOpponentIndex;
+        arcadeVictoryPlayerName = arcadeLadderPlayerCharacter != null ? arcadeLadderPlayerCharacter.getName() : "";
         arcadeLadderActive = false;
         arcadeLadderPlayerCharacter = null;
         arcadeLadderOpponents = new GameCharacter[0];
         arcadeLadderOpponentIndex = 0;
         fightManager.reset();
-        gameState = GameState.MENU;
+        gameState = GameState.ARCADE_VICTORY;
         keyH.resetKeys();
     }
 
@@ -1640,6 +1681,186 @@ public class GamePanel extends JPanel implements Runnable{
         FontMetrics exitMetrics = g2.getFontMetrics();
         int exitX = (screenWidth - exitMetrics.stringWidth(exitText)) / 2;
         g2.drawString(exitText, exitX, screenHeight / 2 + 80);
+    }
+
+    private void drawArcadeVictory(Graphics2D g2) {
+        g2.setColor(Color.black);
+        g2.fillRect(0, 0, screenWidth, screenHeight);
+
+        // Victory title
+        g2.setColor(new Color(255, 215, 0));
+        g2.setFont(new Font("Impact", Font.BOLD, 60));
+        String victory = "VICTORY!";
+        FontMetrics titleMetrics = g2.getFontMetrics();
+        int titleX = (screenWidth - titleMetrics.stringWidth(victory)) / 2;
+        g2.drawString(victory, titleX, screenHeight / 3);
+
+        // Main message
+        g2.setColor(Color.white);
+        g2.setFont(new Font("Serif", Font.PLAIN, 32));
+        String mainMsg = "You've conquered the arcade!";
+        FontMetrics mainMetrics = g2.getFontMetrics();
+        int mainX = (screenWidth - mainMetrics.stringWidth(mainMsg)) / 2;
+        g2.drawString(mainMsg, mainX, screenHeight / 2 - 50);
+
+        // Character name and count
+        g2.setFont(new Font("Serif", Font.PLAIN, 28));
+        String charMsg = "Fighter: " + (arcadeVictoryPlayerName.isEmpty() ? "Unknown" : arcadeVictoryPlayerName);
+        FontMetrics charMetrics = g2.getFontMetrics();
+        int charX = (screenWidth - charMetrics.stringWidth(charMsg)) / 2;
+        g2.drawString(charMsg, charX, screenHeight / 2);
+
+        String countMsg = "Opponents Defeated: " + arcadeOpponentCount;
+        FontMetrics countMetrics = g2.getFontMetrics();
+        int countX = (screenWidth - countMetrics.stringWidth(countMsg)) / 2;
+        g2.drawString(countMsg, countX, screenHeight / 2 + 40);
+
+        // Return prompt
+        g2.setFont(new Font("Serif", Font.PLAIN, 24));
+        String returnText = "Press ENTER to return to menu";
+        FontMetrics returnMetrics = g2.getFontMetrics();
+        int returnX = (screenWidth - returnMetrics.stringWidth(returnText)) / 2;
+        g2.drawString(returnText, returnX, screenHeight / 2 + 100);
+    }
+
+    private void handleArcadeVictoryInput() {
+        if (keyH.menuSelectPressed) {
+            arcadeVictoryPlayerName = "";
+            gameState = GameState.MENU;
+            keyH.resetKeys();
+        }
+    }
+
+    private void drawArcadeLadderPreview(Graphics2D g2) {
+        g2.setColor(Color.black);
+        g2.fillRect(0, 0, screenWidth, screenHeight);
+
+        g2.setColor(new Color(255, 215, 0));
+        g2.setFont(new Font("Impact", Font.BOLD, 54));
+        String title = "ARCADE LADDER";
+        FontMetrics tm = g2.getFontMetrics();
+        int tx = (screenWidth - tm.stringWidth(title)) / 2;
+        g2.drawString(title, tx, 100);
+
+        // Player info
+        g2.setColor(Color.white);
+        g2.setFont(new Font("Serif", Font.PLAIN, 24));
+        String playerLine = "Player: " + (arcadeLadderPlayerCharacter != null ? arcadeLadderPlayerCharacter.getName() : "?");
+        int px = (screenWidth - g2.getFontMetrics().stringWidth(playerLine)) / 2;
+        g2.drawString(playerLine, px, 150);
+
+        // Opponent list
+        int startY = 200;
+        int spacingY = 80;
+        g2.setFont(new Font("Serif", Font.PLAIN, 20));
+        for (int i = 0; i < arcadeLadderOpponents.length; i++) {
+            GameCharacter opp = arcadeLadderOpponents[i];
+            String entry = "Stage " + (i + 1) + ": " + (opp != null ? opp.getName() : "?");
+            int ex = 120;
+            int ey = startY + i * spacingY;
+
+            // Portrait or colored box
+            java.awt.image.BufferedImage p = opp != null ? opp.getPortrait() : null;
+            if (p != null) {
+                g2.drawImage(p, ex, ey - 48, 64, 64, null);
+            } else {
+                g2.setColor(opp != null ? opp.getColor() : Color.darkGray);
+                g2.fillRect(ex, ey - 48, 64, 64);
+            }
+
+            g2.setColor(Color.white);
+            g2.drawString(entry, ex + 84, ey - 8);
+        }
+
+        // Prompt
+        g2.setFont(new Font("Serif", Font.PLAIN, 24));
+        String prompt = "Press ENTER to begin  •  Press ESC to cancel";
+        int promptX = (screenWidth - g2.getFontMetrics().stringWidth(prompt)) / 2;
+        g2.drawString(prompt, promptX, screenHeight - 80);
+    }
+
+    private void handleArcadeLadderPreviewInput() {
+        if (keyH.menuSelectPressed) {
+            // start first fight
+            arcadeLadderOpponentIndex = 0;
+            keyH.resetKeys();
+            if (arcadeLadderOpponents.length > 0) {
+                startNextArcadeLadderFight();
+            } else {
+                endArcadeLadder();
+            }
+        } else if (keyH.menuBackPressed) {
+            endArcadeLadder();
+        }
+    }
+
+    private void drawArcadeNextPreview(Graphics2D g2) {
+        g2.setColor(Color.black);
+        g2.fillRect(0, 0, screenWidth, screenHeight);
+
+        g2.setColor(new Color(255, 215, 0));
+        g2.setFont(new Font("Impact", Font.BOLD, 56));
+        String title = "NEXT OPPONENT";
+        FontMetrics tm = g2.getFontMetrics();
+        int tx = (screenWidth - tm.stringWidth(title)) / 2;
+        g2.drawString(title, tx, 100);
+
+        GameCharacter next = null;
+        if (arcadeLadderOpponents != null && arcadeLadderOpponentIndex >= 0 && arcadeLadderOpponentIndex < arcadeLadderOpponents.length) {
+            next = arcadeLadderOpponents[arcadeLadderOpponentIndex];
+        }
+
+        String stage = "Stage " + (arcadeLadderOpponentIndex + 1);
+        g2.setColor(Color.white);
+        g2.setFont(new Font("Serif", Font.PLAIN, 28));
+        int sx = (screenWidth - g2.getFontMetrics().stringWidth(stage)) / 2;
+        g2.drawString(stage, sx, 180);
+
+        if (next != null) {
+            java.awt.image.BufferedImage p = next.getPortrait();
+            if (p != null) {
+                int pw = 200;
+                int ph = 200;
+                int px = (screenWidth - pw) / 2;
+                g2.drawImage(p, px, 220, pw, ph, null);
+            } else {
+                g2.setColor(next.getColor());
+                int boxSize = 200;
+                int bx = (screenWidth - boxSize) / 2;
+                g2.fillRect(bx, 220, boxSize, boxSize);
+            }
+
+            g2.setColor(Color.white);
+            g2.setFont(new Font("Serif", Font.PLAIN, 32));
+            String name = next.getName();
+            int nx = (screenWidth - g2.getFontMetrics().stringWidth(name)) / 2;
+            g2.drawString(name, nx, 460);
+        } else {
+            g2.setColor(Color.white);
+            g2.setFont(new Font("Serif", Font.PLAIN, 24));
+            String none = "No opponent";
+            int nx = (screenWidth - g2.getFontMetrics().stringWidth(none)) / 2;
+            g2.drawString(none, nx, 320);
+        }
+
+        g2.setFont(new Font("Serif", Font.PLAIN, 22));
+        String prompt = "Press ENTER to continue to the next fight  •  Press ESC to quit the ladder";
+        int px = (screenWidth - g2.getFontMetrics().stringWidth(prompt)) / 2;
+        g2.drawString(prompt, px, screenHeight - 80);
+    }
+
+    private void handleArcadeNextPreviewInput() {
+        if (keyH.menuSelectPressed) {
+            keyH.resetKeys();
+            if (arcadeLadderOpponentIndex >= 0 && arcadeLadderOpponentIndex < arcadeLadderOpponents.length) {
+                startNextArcadeLadderFight();
+            } else {
+                endArcadeLadder();
+            }
+        } else if (keyH.menuBackPressed) {
+            keyH.resetKeys();
+            endArcadeLadder();
+        }
     }
 }
 

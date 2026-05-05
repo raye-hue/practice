@@ -36,7 +36,7 @@ public class CryingWojak extends GameCharacter {
                 new Color(165, 165, 175),
                 new Move[]{
                         new Move("Inner Rage", 0, 0, 8, MoveEffect.BUFF_ATTACK, "+5 permanent attack", 480),
-                    new Move("Mental Breakdown", 30, 50, 16, MoveEffect.RAGE_SCALING, "Stronger if HP is low", 1200)
+                    new Move("Mental Breakdown", 30, 50, 16, MoveEffect.RAGE_SCALING, "Stronger if HP is low", 960)
                 },
                 "A fighter who transforms vulnerability into a volatile weapon. Initially fragile, his true power scales with his distress, tapping into a raw \"inner rage\" that becomes increasingly dangerous as his situation worsens."
         );
