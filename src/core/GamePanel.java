@@ -219,6 +219,7 @@ public class GamePanel extends JPanel implements Runnable{
                     } else {
                         gameState = GameState.ARCADE_GAME_OVER;
                         arcadeGameOverText = "You lost to " + arcadeLadderOpponents[arcadeLadderOpponentIndex].getName() + "!";
+                        AudioManager.playSoundEffect("assets/sfx/gameover.wav");
                     }
                 } else {
                     fightManager.reset();

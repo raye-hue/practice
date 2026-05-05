@@ -879,17 +879,24 @@ public class FightManager {
 
         g2.setFont(new Font("Serif", Font.PLAIN, 14));
         String manaText = "Mana: " + character.getCurrentMana() + "/" + template.getMaxMana();
+        
+        g2.setFont(new Font("Serif", Font.BOLD, 18));
         String skill1Text = buildMoveTimerText("S1", skill1, character.getMoveCooldownRemainingFrames(0));
         String ultimateText = buildMoveTimerText("ULT", ultimate, character.getMoveCooldownRemainingFrames(1));
 
         FontMetrics metrics = g2.getFontMetrics();
         int manaX = leftAligned ? anchorX : anchorX - metrics.stringWidth(manaText);
-        int skill1X = leftAligned ? anchorX : anchorX - metrics.stringWidth(skill1Text);
-        int ultimateX = leftAligned ? anchorX : anchorX - metrics.stringWidth(ultimateText);
+        
+        FontMetrics boldMetrics = g2.getFontMetrics();
+        int skill1X = leftAligned ? anchorX : anchorX - boldMetrics.stringWidth(skill1Text);
+        int ultimateX = leftAligned ? anchorX : anchorX - boldMetrics.stringWidth(ultimateText);
 
+        g2.setFont(new Font("Serif", Font.PLAIN, 14));
         g2.drawString(manaText, manaX, startY);
-        g2.drawString(skill1Text, skill1X, startY + 18);
-        g2.drawString(ultimateText, ultimateX, startY + 36);
+        
+        g2.setFont(new Font("Serif", Font.BOLD, 18));
+        drawOutlinedString(g2, skill1Text, skill1X, startY + 18, Color.white, Color.black);
+        drawOutlinedString(g2, ultimateText, ultimateX, startY + 36, Color.white, Color.black);
     }
 
     private void drawOutlinedString(Graphics2D g2, String text, int x, int y, Color fillColor, Color outlineColor) {
