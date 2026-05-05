@@ -32,7 +32,7 @@ public class Trollface extends GameCharacter {
         super(
                 "Trollface",
                 "Trickster / Trap Fighter",
-                155, 60, 15, 9,
+            155, 35, 15, 9,
                 new Color(220, 220, 220),
                 new Move[]{
                         new Move("Minor Trolling", 10, 18, 5, MoveEffect.DAMAGE_AND_SKIP_CHANCE, "30% miss next attack", 480, "assets/sfx/laugh.wav"),

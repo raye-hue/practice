@@ -29,7 +29,7 @@ public class HideThePainHarold extends GameCharacter {
                 "Hide the Pain Harold",
                 "Counter / Defense",
                 170,
-                50,
+            30,
                 15,
                 12,
                 new Color(210, 175, 140),

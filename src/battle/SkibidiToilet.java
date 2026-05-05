@@ -30,7 +30,7 @@ public class SkibidiToilet extends GameCharacter {
                 "Skibidi Toilet",
                 "Chaos Multi-hit",
                 145,
-                60,
+            35,
                 17,
                 8,
                 new Color(200, 200, 200),

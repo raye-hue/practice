@@ -25,7 +25,7 @@ public class GrumpyCat extends GameCharacter {
                 "Grumpy Cat",
                 "Tank / Debuff",
                 190,
-                40,
+            25,
                 12,
                 14,
                 new Color(170, 150, 130),

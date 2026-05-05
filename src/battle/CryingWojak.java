@@ -29,8 +29,8 @@ public class CryingWojak extends GameCharacter {
         super(
                 "Crying Wojak",
                 "Rage Scaling Fighter",
-                110,
-                50,
+                150,
+            30,
                 14,
                 9,
                 new Color(165, 165, 175),

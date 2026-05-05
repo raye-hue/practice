@@ -31,7 +31,7 @@ public class PepeTheFrog extends GameCharacter {
                 "Pepe the Frog",
                 "Status / Sustain",
                 155,
-                55,
+            30,
                 14,
                 9,
                 new Color(103, 168, 74),

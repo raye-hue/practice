@@ -28,7 +28,7 @@ public class Gigachad extends GameCharacter {
                 "Gigachad",
                 "High Damage Boss",
                 200,
-                60,
+            35,
                 20,
                 13,
                 new Color(255, 204, 255),

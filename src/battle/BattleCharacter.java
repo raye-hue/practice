@@ -13,6 +13,7 @@ public class BattleCharacter {
     private int attackSkipCount;
     private int trappedDamage;
     private final int[] moveCooldownRemainingFrames;
+    private int manaRegenFrameCounter;
 
     public BattleCharacter(GameCharacter template) {
         this.template = template;
@@ -144,6 +145,16 @@ public class BattleCharacter {
         }
         if (blockDamageReductionRemainingFrames > 0 && --blockDamageReductionRemainingFrames == 0) {
             blockDamageReductionPercent = 0;
+        }
+
+        if (currentMana < template.getMaxMana()) {
+            manaRegenFrameCounter++;
+            if (manaRegenFrameCounter >= 60) {
+                restoreMana(1);
+                manaRegenFrameCounter = 0;
+            }
+        } else {
+            manaRegenFrameCounter = 0;
         }
 
         for (int i = 0; i < moveCooldownRemainingFrames.length; i++) {

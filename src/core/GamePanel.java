@@ -1630,6 +1630,7 @@ public class GamePanel extends JPanel implements Runnable{
         arcadeLadderOpponentIndex = 0;
         fightManager.reset();
         gameState = GameState.ARCADE_VICTORY;
+        AudioManager.playSoundEffect("assets/sfx/victory.wav");
         keyH.resetKeys();
     }
 

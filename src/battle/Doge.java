@@ -25,7 +25,7 @@ public class Doge extends GameCharacter {
                 "Doge",
                 "Balanced Fighter",
                 165,
-                50,
+            30,
                 16,
                 10,
                 new Color(235, 195, 130),

@@ -877,7 +877,7 @@ public class FightManager {
         Move skill1 = template.getSkill1();
         Move ultimate = template.getUltimate();
 
-        g2.setFont(new Font("Serif", Font.PLAIN, 14));
+        g2.setFont(new Font("Serif", Font.PLAIN, 12));
         String manaText = "Mana: " + character.getCurrentMana() + "/" + template.getMaxMana();
         
         g2.setFont(new Font("Serif", Font.BOLD, 18));
@@ -891,7 +891,7 @@ public class FightManager {
         int skill1X = leftAligned ? anchorX : anchorX - boldMetrics.stringWidth(skill1Text);
         int ultimateX = leftAligned ? anchorX : anchorX - boldMetrics.stringWidth(ultimateText);
 
-        g2.setFont(new Font("Serif", Font.PLAIN, 14));
+        g2.setFont(new Font("Serif", Font.PLAIN, 12));
         g2.drawString(manaText, manaX, startY);
         
         g2.setFont(new Font("Serif", Font.BOLD, 18));
@@ -1088,7 +1088,7 @@ public class FightManager {
         int barHeight = 22;
         int barY = 58;
         int manaBarY = barY + barHeight + 6;
-        int manaBarHeight = 12;
+        int manaBarHeight = 8;
 
         BattleCharacter p1 = player1Fighter.getBattleCharacter();
         BattleCharacter p2 = player2Fighter.getBattleCharacter();

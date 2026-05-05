@@ -31,7 +31,7 @@ public class Sample extends GameCharacter {
                 "Sample",
                 "Balanced Starter",
                 160,
-                50,
+            30,
                 15,
                 10,
                 new Color(120, 180, 255),
