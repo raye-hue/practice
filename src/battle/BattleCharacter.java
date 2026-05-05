@@ -149,7 +149,7 @@ public class BattleCharacter {
 
         if (currentMana < template.getMaxMana()) {
             manaRegenFrameCounter++;
-            if (manaRegenFrameCounter >= 60) {
+            if (manaRegenFrameCounter >= 90) {
                 restoreMana(1);
                 manaRegenFrameCounter = 0;
             }
