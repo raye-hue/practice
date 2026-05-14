@@ -7,6 +7,10 @@ import java.awt.Color;
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Comparator;
+import java.nio.file.*;
+import java.nio.charset.StandardCharsets;
 import world.TileManager;
 
 
@@ -29,6 +33,7 @@ public class GamePanel extends JPanel implements Runnable{
         ARCADE_LADDER_PREVIEW,
         ARCADE_NEXT_PREVIEW,
         ARCADE_VICTORY,
+        LEADERBOARD,
         PAUSE,
         CREDITS
     }
@@ -51,7 +56,7 @@ public class GamePanel extends JPanel implements Runnable{
 
     GameState gameState = GameState.MENU;
     int menuIndex = 0;
-    String[] menuItems = {"Play", "Arcade", "Credits", "Quit"};
+    String[] menuItems = {"Play", "Arcade", "Leaderboard", "Credits", "Quit"};
     int playModeIndex = 0;
     String[] playModeItems = {"Player vs Player", "Player vs Computer"};
     String selectedPlayMode = "Player vs Player";
@@ -124,6 +129,12 @@ public class GamePanel extends JPanel implements Runnable{
     String arcadeGameOverText = "";
     int arcadeOpponentCount = 0;
     String arcadeVictoryPlayerName = "";
+    // Leaderboard and timing fields
+    private long arcadeStartTimeMillis = 0L;
+    private long arcadeElapsedMillis = 0L;
+    private boolean arcadeEnteringName = false;
+    private String arcadeInputName = "";
+    private final String LEADERBOARD_FILE = "leaderboard.txt";
     FightManager fightManager = new FightManager(screenWidth, screenHeight);
     public GamePanel(){
         this.setPreferredSize(new Dimension(screenWidth, screenHeight));
@@ -252,6 +263,11 @@ public class GamePanel extends JPanel implements Runnable{
 
         if (gameState == GameState.ARCADE_VICTORY) {
             handleArcadeVictoryInput();
+            return;
+        }
+
+        if (gameState == GameState.LEADERBOARD) {
+            handleLeaderboardInput();
             return;
         }
 
@@ -459,6 +475,11 @@ public class GamePanel extends JPanel implements Runnable{
             g2.dispose();
             return;
         }
+        if (gameState == GameState.LEADERBOARD) {
+            drawLeaderboard(g2);
+            g2.dispose();
+            return;
+        }
         
         if (gameState == GameState.CREDITS) {
             drawCredits(g2);
@@ -617,9 +638,12 @@ public class GamePanel extends JPanel implements Runnable{
             endArcadeLadder();
             gameState = GameState.ARCADE;
         } else if (menuIndex == 2) {
+            // Leaderboard
+            gameState = GameState.LEADERBOARD;
+        } else if (menuIndex == 3) {
             creditsInitialized = false;
             gameState = GameState.CREDITS;
-        } else if (menuIndex == 3) {
+        } else if (menuIndex == 4) {
             audioManager.stopMusic();
             System.exit(0);
         }
@@ -1484,6 +1508,8 @@ public class GamePanel extends JPanel implements Runnable{
             arcadeLadderOpponents = buildArcadeLadderOpponents(playerCharacter);
             arcadeLadderOpponentIndex = 0;
             selectedPlayMode = "Player vs Computer";
+            // Record start time for leaderboard timing
+            arcadeStartTimeMillis = System.currentTimeMillis();
             // Show the ladder preview screen first (list of opponents)
             gameState = GameState.ARCADE_LADDER_PREVIEW;
         }
@@ -1629,6 +1655,12 @@ public class GamePanel extends JPanel implements Runnable{
         arcadeLadderOpponents = new GameCharacter[0];
         arcadeLadderOpponentIndex = 0;
         fightManager.reset();
+        // compute elapsed time and prompt for name input to record leaderboard
+        arcadeElapsedMillis = System.currentTimeMillis() - arcadeStartTimeMillis;
+        arcadeInputName = "";
+        arcadeEnteringName = true;
+        keyH.textInputActive = true;
+        keyH.typedText = "";
         gameState = GameState.ARCADE_VICTORY;
         AudioManager.playSoundEffect("assets/sfx/victory.wav");
         keyH.resetKeys();
@@ -1719,13 +1751,54 @@ public class GamePanel extends JPanel implements Runnable{
 
         // Return prompt
         g2.setFont(new Font("Serif", Font.PLAIN, 24));
-        String returnText = "Press ENTER to return to menu";
-        FontMetrics returnMetrics = g2.getFontMetrics();
-        int returnX = (screenWidth - returnMetrics.stringWidth(returnText)) / 2;
-        g2.drawString(returnText, returnX, screenHeight / 2 + 100);
+        if (arcadeEnteringName) {
+            String prompt = "Enter name (max 16 chars): ";
+            FontMetrics pm = g2.getFontMetrics();
+            int px = (screenWidth - pm.stringWidth(prompt + arcadeInputName)) / 2;
+            g2.drawString(prompt + arcadeInputName, px, screenHeight / 2 + 100);
+
+            String hint = "Press ENTER to save  •  Press ESC to skip";
+            int hx = (screenWidth - g2.getFontMetrics().stringWidth(hint)) / 2;
+            g2.drawString(hint, hx, screenHeight / 2 + 140);
+        } else {
+            String returnText = "Press ENTER to return to menu";
+            FontMetrics returnMetrics = g2.getFontMetrics();
+            int returnX = (screenWidth - returnMetrics.stringWidth(returnText)) / 2;
+            g2.drawString(returnText, returnX, screenHeight / 2 + 100);
+        }
     }
 
     private void handleArcadeVictoryInput() {
+        if (arcadeEnteringName) {
+            // Build typed text from KeyHandler
+            arcadeInputName = keyH.typedText != null ? keyH.typedText : arcadeInputName;
+            if (keyH.menuSelectPressed) {
+                if (arcadeInputName == null || arcadeInputName.trim().isEmpty()) {
+                    arcadeInputName = "Anon";
+                }
+                saveLeaderboardEntry(arcadeInputName.trim(), arcadeElapsedMillis);
+                // stop text input and show leaderboard
+                arcadeEnteringName = false;
+                keyH.textInputActive = false;
+                keyH.typedText = "";
+                arcadeInputName = "";
+                gameState = GameState.LEADERBOARD;
+                keyH.resetKeys();
+                return;
+            }
+            if (keyH.menuBackPressed) {
+                // skip name entry
+                arcadeEnteringName = false;
+                keyH.textInputActive = false;
+                keyH.typedText = "";
+                arcadeInputName = "";
+                gameState = GameState.LEADERBOARD;
+                keyH.resetKeys();
+                return;
+            }
+            return;
+        }
+
         if (keyH.menuSelectPressed) {
             arcadeVictoryPlayerName = "";
             gameState = GameState.MENU;
@@ -1862,6 +1935,99 @@ public class GamePanel extends JPanel implements Runnable{
         } else if (keyH.menuBackPressed) {
             keyH.resetKeys();
             endArcadeLadder();
+        }
+    }
+
+    // Simple leaderboard entry holder
+    private static class LeaderboardEntry {
+        String name;
+        long timeMillis;
+        LeaderboardEntry(String name, long timeMillis) {
+            this.name = name;
+            this.timeMillis = timeMillis;
+        }
+    }
+
+    private void saveLeaderboardEntry(String name, long millis) {
+        try {
+            Path p = Paths.get(LEADERBOARD_FILE);
+            String line = name.replace('|', ' ') + "|" + millis + System.lineSeparator();
+            Files.write(p, line.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+        } catch (Exception e) {
+            // ignore write errors for now
+            e.printStackTrace();
+        }
+    }
+
+    private List<LeaderboardEntry> loadLeaderboardEntries() {
+        try {
+            Path p = Paths.get(LEADERBOARD_FILE);
+            if (!Files.exists(p)) return new ArrayList<>();
+            List<String> lines = Files.readAllLines(p, StandardCharsets.UTF_8);
+            List<LeaderboardEntry> entries = new ArrayList<>();
+            for (String l : lines) {
+                if (l == null || l.trim().isEmpty()) continue;
+                String[] parts = l.split("\\|", 2);
+                if (parts.length < 2) continue;
+                String n = parts[0];
+                long t = 0L;
+                try { t = Long.parseLong(parts[1].trim()); } catch (Exception ex) { continue; }
+                entries.add(new LeaderboardEntry(n, t));
+            }
+            entries.sort(Comparator.comparingLong(e -> e.timeMillis));
+            return entries;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+
+    private String formatTime(long millis) {
+        long seconds = millis / 1000;
+        long ms = millis % 1000;
+        long mins = seconds / 60;
+        long secs = seconds % 60;
+        return String.format("%d:%02d.%03d", mins, secs, ms);
+    }
+
+    private void drawLeaderboard(Graphics2D g2) {
+        g2.setColor(Color.black);
+        g2.fillRect(0, 0, screenWidth, screenHeight);
+
+        g2.setColor(new Color(255, 215, 0));
+        g2.setFont(new Font("Impact", Font.BOLD, 48));
+        String title = "LEADERBOARD";
+        int tx = (screenWidth - g2.getFontMetrics().stringWidth(title)) / 2;
+        g2.drawString(title, tx, 80);
+
+        List<LeaderboardEntry> entries = loadLeaderboardEntries();
+        g2.setColor(Color.white);
+        g2.setFont(new Font("Serif", Font.PLAIN, 20));
+        int startY = 130;
+        int lineH = 34;
+        int max = Math.min(entries.size(), 10);
+        for (int i = 0; i < max; i++) {
+            LeaderboardEntry e = entries.get(i);
+            String line = String.format("%2d. %-12s  %s", i + 1, e.name, formatTime(e.timeMillis));
+            int lx = (screenWidth - g2.getFontMetrics().stringWidth(line)) / 2;
+            g2.drawString(line, lx, startY + i * lineH);
+        }
+
+        if (entries.isEmpty()) {
+            String none = "No entries yet.";
+            int nx = (screenWidth - g2.getFontMetrics().stringWidth(none)) / 2;
+            g2.drawString(none, nx, startY + 20);
+        }
+
+        String hint = "Press ESC to return to menu";
+        int hx = (screenWidth - g2.getFontMetrics().stringWidth(hint)) / 2;
+        g2.drawString(hint, hx, screenHeight - 60);
+    }
+
+    private void handleLeaderboardInput() {
+        if (keyH.menuBackPressed || keyH.menuSelectPressed) {
+            gameState = GameState.MENU;
+            keyH.resetKeys();
         }
     }
 }

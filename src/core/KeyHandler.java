@@ -14,9 +14,26 @@ public class KeyHandler implements KeyListener{
     public boolean menuBackPressed;
     public boolean anyKeyPressed;
     public boolean pausePressed = false;
+    // Text input support for name entry
+    public boolean textInputActive = false;
+    public String typedText = "";
     @Override
     public void keyTyped(KeyEvent e) {
-
+        if (!textInputActive) return;
+        char c = e.getKeyChar();
+        if (c == KeyEvent.CHAR_UNDEFINED) return;
+        // Backspace
+        if (c == '\b') {
+            if (typedText.length() > 0) {
+                typedText = typedText.substring(0, typedText.length() - 1);
+            }
+            return;
+        }
+        // Ignore control characters
+        if (Character.isISOControl(c)) return;
+        // Limit name length
+        if (typedText.length() >= 16) return;
+        typedText += c;
     }
 
     @Override
@@ -194,6 +211,7 @@ public class KeyHandler implements KeyListener{
         menuSelectPressed = false;
         menuBackPressed = false;
         anyKeyPressed = false;
+        // keep typedText intact unless explicitly cleared by caller
     }
     
 }
