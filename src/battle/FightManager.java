@@ -3,6 +3,7 @@ package battle;
 import core.AudioManager;
 import core.KeyHandler;
 import java.awt.Color;
+import java.awt.BasicStroke;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
@@ -315,36 +316,104 @@ public class FightManager {
 
         // Controls are shown on the pause panel instead of the HUD
 
+        // Center panel
+        int centerPanelW = 220;
+        int centerPanelH = 85;
+        int centerPanelX = (screenWidth - centerPanelW) / 2;
+        int centerPanelY = 8;
+        drawHudPanel(g2, centerPanelX, centerPanelY, centerPanelW, centerPanelH);
 
+        g2.setFont(new Font("Impact", Font.BOLD, 20));
         String opponentLabel = "Player vs Computer".equals(selectedPlayMode) ? "CPU" : "P2";
-        g2.setFont(new Font("Serif", Font.BOLD, 22));
         String scoreText = "Score: P1 " + player1RoundsWon + " - " + player2RoundsWon + " " + opponentLabel;
         FontMetrics scoreMetrics = g2.getFontMetrics();
         int scoreX = (screenWidth - scoreMetrics.stringWidth(scoreText)) / 2;
-        drawOutlinedString(g2, scoreText, scoreX, 48, Color.white, Color.black);
+        drawOutlinedString(g2, scoreText, scoreX, 30, new Color(255, 215, 0), Color.black);
 
-        g2.setFont(new Font("Serif", Font.BOLD, 22));
+        g2.setFont(new Font("Impact", Font.BOLD, 20));
         String timerText = "Time: " + getRoundSecondsRemaining();
         FontMetrics timerMetrics = g2.getFontMetrics();
         int timerX = (screenWidth - timerMetrics.stringWidth(timerText)) / 2;
-        drawOutlinedString(g2, timerText, timerX, 68, Color.white, Color.black);
+        drawOutlinedString(g2, timerText, timerX, 54, new Color(255, 215, 0), Color.black);
+
+        
+        g2.setFont(new Font("Impact", Font.BOLD, 22));
+        String roundText = ladderMode && ladderOpponentTotal > 0
+                ? "STAGE " + ladderOpponentIndex + " / " + ladderOpponentTotal
+                : "ROUND " + currentRoundNumber;
+        FontMetrics roundMetrics = g2.getFontMetrics();
+        int roundX = (screenWidth - roundMetrics.stringWidth(roundText)) / 2;
+        drawOutlinedString(g2, roundText, roundX, 78, new Color(255, 215, 0), Color.black);
+
+       
+    int dotSize = 20;
+    int dotGap = 12;
+    int totalDotsWidth = (3 * dotSize) + (2 * dotGap);
+    int dotsStartX = (screenWidth - totalDotsWidth) / 2;
+    int dotsY = 100;
+
+    Color[] dotColors = {
+        new Color(180, 30, 30),   // red = not played
+        new Color(180, 140, 0),   // amber = middle
+        new Color(40, 180, 60)    // green = won
+    };
+
+    for (int i = 0; i < 3; i++) {
+        int dotX = dotsStartX + i * (dotSize + dotGap);
+
+        // Shadow
+        g2.setColor(new Color(0, 0, 0, 150));
+        g2.fillOval(dotX + 2, dotsY + 2, dotSize, dotSize);
+
+        // Fill based on round result
+        if (i < player1RoundsWon) {
+            g2.setColor(new Color(40, 200, 60));   // green = P1 won
+        } else if (i < player2RoundsWon) {
+            g2.setColor(new Color(200, 40, 40));   // red = P2 won
+        } else if (i == player1RoundsWon + player2RoundsWon) {
+            g2.setColor(new Color(180, 140, 0));   // amber = current round
+        } else {
+            g2.setColor(new Color(50, 50, 50));    // dark = not reached
+        }
+        g2.fillOval(dotX, dotsY, dotSize, dotSize);
+
+        // Shiny highlight
+        g2.setColor(new Color(255, 255, 255, 60));
+        g2.fillOval(dotX + 4, dotsY + 3, dotSize / 2, dotSize / 3);
+
+        // Border
+        g2.setColor(new Color(255, 215, 0, 200));
+        g2.setStroke(new BasicStroke(2));
+        g2.drawOval(dotX, dotsY, dotSize, dotSize);
+        g2.setStroke(new BasicStroke(1));
+    }
 
         drawMoveStatus(g2, player1Fighter, 20, 112, true);
         drawMoveStatus(g2, player2Fighter, screenWidth - 20, 112, false);
 
-        if (ladderMode && ladderOpponentTotal > 0) {
-            String ladderText = "Ladder: " + ladderOpponentIndex + "/" + ladderOpponentTotal;
-            FontMetrics ladderMetrics = g2.getFontMetrics();
-            g2.drawString(ladderText, screenWidth - 20 - ladderMetrics.stringWidth(ladderText), 28);
-        }
+    
+       drawOutlinedString(g2, "P to PAUSE", 20, screenHeight - 18, new Color(255, 215, 0), Color.black);
 
-        g2.drawString("P to PAUSE", 20, screenHeight - 18);
-
+        
+           // REPLACE WITH 👇
         if (!roundResultText.isEmpty()) {
             g2.setFont(new Font("Impact", Font.BOLD, 44));
             FontMetrics resultMetrics = g2.getFontMetrics();
             int resultX = (screenWidth - resultMetrics.stringWidth(roundResultText)) / 2;
-            g2.drawString(roundResultText, resultX, screenHeight / 2);
+
+            // Dark panel behind result text
+            int resultPanelW = resultMetrics.stringWidth(roundResultText) + 60;
+            int resultPanelH = 60;
+            int resultPanelX = (screenWidth - resultPanelW) / 2;
+            int resultPanelY = screenHeight / 2 - 48;
+            g2.setColor(new Color(0, 0, 0, 180));
+            g2.fillRoundRect(resultPanelX, resultPanelY, resultPanelW, resultPanelH, 12, 12);
+            g2.setColor(new Color(255, 215, 0, 150));
+            g2.setStroke(new BasicStroke(2));
+            g2.drawRoundRect(resultPanelX, resultPanelY, resultPanelW, resultPanelH, 12, 12);
+            g2.setStroke(new BasicStroke(1));
+
+            drawOutlinedString(g2, roundResultText, resultX, screenHeight / 2, new Color(255, 215, 0), Color.black);
 
             g2.setFont(new Font("Serif", Font.PLAIN, 18));
             if (matchOver && rematchMenuActive) {
@@ -868,36 +937,34 @@ public class FightManager {
     }
 
     private void drawMoveStatus(Graphics2D g2, Fighter fighter, int anchorX, int startY, boolean leftAligned) {
-        if (fighter == null) {
-            return;
-        }
-
-        BattleCharacter character = fighter.getBattleCharacter();
-        GameCharacter template = character.getTemplate();
-        Move skill1 = template.getSkill1();
-        Move ultimate = template.getUltimate();
-
-        g2.setFont(new Font("Serif", Font.PLAIN, 12));
-        String manaText = "Mana: " + character.getCurrentMana() + "/" + template.getMaxMana();
-        
-        g2.setFont(new Font("Serif", Font.BOLD, 18));
-        String skill1Text = buildMoveTimerText("S1", skill1, character.getMoveCooldownRemainingFrames(0));
-        String ultimateText = buildMoveTimerText("ULT", ultimate, character.getMoveCooldownRemainingFrames(1));
-
-        FontMetrics metrics = g2.getFontMetrics();
-        int manaX = leftAligned ? anchorX : anchorX - metrics.stringWidth(manaText);
-        
-        FontMetrics boldMetrics = g2.getFontMetrics();
-        int skill1X = leftAligned ? anchorX : anchorX - boldMetrics.stringWidth(skill1Text);
-        int ultimateX = leftAligned ? anchorX : anchorX - boldMetrics.stringWidth(ultimateText);
-
-        g2.setFont(new Font("Serif", Font.PLAIN, 12));
-        g2.drawString(manaText, manaX, startY);
-        
-        g2.setFont(new Font("Serif", Font.BOLD, 18));
-        drawOutlinedString(g2, skill1Text, skill1X, startY + 18, Color.white, Color.black);
-        drawOutlinedString(g2, ultimateText, ultimateX, startY + 36, Color.white, Color.black);
+    if (fighter == null) {
+        return;
     }
+
+    BattleCharacter character = fighter.getBattleCharacter();
+    GameCharacter template = character.getTemplate();
+    Move skill1 = template.getSkill1();
+    Move ultimate = template.getUltimate();
+
+    String manaText = "Mana: " + character.getCurrentMana() + "/" + template.getMaxMana();
+    String skill1Text = buildMoveTimerText("S1", skill1, character.getMoveCooldownRemainingFrames(0));
+    String ultimateText = buildMoveTimerText("ULT", ultimate, character.getMoveCooldownRemainingFrames(1));
+
+    // Mana text
+    g2.setFont(new Font("Serif", Font.PLAIN, 12));
+    FontMetrics manaMetrics = g2.getFontMetrics();
+    int manaX = leftAligned ? anchorX : anchorX - manaMetrics.stringWidth(manaText);
+    drawOutlinedString(g2, manaText, manaX, startY, new Color(255, 215, 0), Color.black);
+    // Skill1 text
+    g2.setFont(new Font("Serif", Font.BOLD, 18));
+    FontMetrics skill1Metrics = g2.getFontMetrics();
+    int skill1X = leftAligned ? anchorX : anchorX - skill1Metrics.stringWidth(skill1Text);
+    drawOutlinedString(g2, skill1Text, skill1X, startY + 18, new Color(255, 215, 0), Color.black);
+    // Ultimate text
+    g2.setFont(new Font("Serif", Font.BOLD, 18));
+    FontMetrics ultimateMetrics = g2.getFontMetrics();
+    int ultimateX = leftAligned ? anchorX : anchorX - ultimateMetrics.stringWidth(ultimateText);
+    drawOutlinedString(g2, ultimateText, ultimateX, startY + 36, new Color(255, 215, 0), Color.black);}
 
     private void drawOutlinedString(Graphics2D g2, String text, int x, int y, Color fillColor, Color outlineColor) {
         Color originalColor = g2.getColor();
@@ -1085,56 +1152,101 @@ public class FightManager {
         }
 
         int barWidth = 240;
-        int barHeight = 22;
-        int barY = 58;
-        int manaBarY = barY + barHeight + 6;
-        int manaBarHeight = 8;
+        int barHeight = 18;
+        int panelPadding = 10;
+        int panelW = barWidth + panelPadding * 2;
+        int panelH = 80;
+        int panelY = 8;
 
         BattleCharacter p1 = player1Fighter.getBattleCharacter();
         BattleCharacter p2 = player2Fighter.getBattleCharacter();
 
         int p1MaxHp = Math.max(1, p1.getTemplate().getMaxHp());
         int p2MaxHp = Math.max(1, p2.getTemplate().getMaxHp());
-        int p1Fill = (int) (barWidth * (p1.getCurrentHp() / (double) p1MaxHp));
-        int p2Fill = (int) (barWidth * (p2.getCurrentHp() / (double) p2MaxHp));
+        int p1Fill = (int)(barWidth * (p1.getCurrentHp() / (double) p1MaxHp));
+        int p2Fill = (int)(barWidth * (p2.getCurrentHp() / (double) p2MaxHp));
         int p1MaxMana = Math.max(1, p1.getTemplate().getMaxMana());
         int p2MaxMana = Math.max(1, p2.getTemplate().getMaxMana());
-        int p1ManaFill = (int) (barWidth * (p1.getCurrentMana() / (double) p1MaxMana));
-        int p2ManaFill = (int) (barWidth * (p2.getCurrentMana() / (double) p2MaxMana));
+        int p1ManaFill = (int)(barWidth * (p1.getCurrentMana() / (double) p1MaxMana));
+        int p2ManaFill = (int)(barWidth * (p2.getCurrentMana() / (double) p2MaxMana));
 
-        g2.setColor(Color.darkGray);
-        g2.fillRect(20, barY, barWidth, barHeight);
-        g2.fillRect(screenWidth - 20 - barWidth, barY, barWidth, barHeight);
+     
+        int p1PanelX = 10;
+        drawHudPanel(g2, p1PanelX, panelY, panelW, panelH);
 
-        g2.setColor(new Color(35, 60, 110));
-        g2.fillRect(20, manaBarY, barWidth, manaBarHeight);
-        g2.fillRect(screenWidth - 20 - barWidth, manaBarY, barWidth, manaBarHeight);
 
-        g2.setColor(new Color(50, 200, 90));
-        g2.fillRect(20, barY, p1Fill, barHeight);
-        g2.fillRect(screenWidth - 20 - p2Fill, barY, p2Fill, barHeight);
+        int barX1 = p1PanelX + panelPadding;
+        int barY1 = panelY + 32;
+        g2.setColor(new Color(30, 30, 30));
+        g2.fillRoundRect(barX1, barY1, barWidth, barHeight, 6, 6);
+        g2.setColor(new Color(50, 210, 80));
+        g2.fillRoundRect(barX1, barY1, p1Fill, barHeight, 6, 6);
+        g2.setColor(new Color(255, 215, 0, 180));
+        g2.setStroke(new BasicStroke(1.5f));
+        g2.drawRoundRect(barX1, barY1, barWidth, barHeight, 6, 6);
 
-        g2.setColor(new Color(80, 150, 255));
-        g2.fillRect(20, manaBarY, p1ManaFill, manaBarHeight);
-        g2.fillRect(screenWidth - 20 - p2ManaFill, manaBarY, p2ManaFill, manaBarHeight);
+        
+        int manaBarY1 = barY1 + barHeight + 6;
+        int manaBarHeight = 10;
+        g2.setColor(new Color(20, 20, 60));
+        g2.fillRoundRect(barX1, manaBarY1, barWidth, manaBarHeight, 4, 4);
+        g2.setColor(new Color(60, 140, 255));
+        g2.fillRoundRect(barX1, manaBarY1, p1ManaFill, manaBarHeight, 4, 4);
+        g2.setColor(new Color(255, 215, 0, 180));
+        g2.drawRoundRect(barX1, manaBarY1, barWidth, manaBarHeight, 4, 4);
+        g2.setStroke(new BasicStroke(1));
 
-        g2.setColor(Color.white);
-        g2.drawRect(20, barY, barWidth, barHeight);
-        g2.drawRect(screenWidth - 20 - barWidth, barY, barWidth, barHeight);
-        g2.drawRect(20, manaBarY, barWidth, manaBarHeight);
-        g2.drawRect(screenWidth - 20 - barWidth, manaBarY, barWidth, manaBarHeight);
-
+       
         g2.setFont(new Font("Serif", Font.BOLD, 16));
-        g2.drawString(p1.getTemplate().getName() + " HP: " + p1.getCurrentHp(), 20, barY - 8);
-        String p2Text = p2.getTemplate().getName() + " HP: " + p2.getCurrentHp();
-        FontMetrics p2Metrics = g2.getFontMetrics();
-        g2.drawString(p2Text, screenWidth - 20 - p2Metrics.stringWidth(p2Text), barY - 8);
+        drawOutlinedString(g2, p1.getTemplate().getName() + " HP: " + p1.getCurrentHp(),
+                barX1, panelY + 22, new Color(255, 215, 0), Color.black);
 
-        g2.setFont(new Font("Serif", Font.PLAIN, 13));
-        g2.drawString("Mana: " + p1.getCurrentMana() + "/" + p1.getTemplate().getMaxMana(), 20, manaBarY - 4);
-        String p2ManaText = "Mana: " + p2.getCurrentMana() + "/" + p2.getTemplate().getMaxMana();
-        FontMetrics p2ManaMetrics = g2.getFontMetrics();
-        g2.drawString(p2ManaText, screenWidth - 20 - p2ManaMetrics.stringWidth(p2ManaText), manaBarY - 4);
+        int p2PanelX = screenWidth - panelW - 10;
+        drawHudPanel(g2, p2PanelX, panelY, panelW, panelH);
+
+        int barX2 = p2PanelX + panelPadding;
+        int barY2 = panelY + 32;
+        g2.setColor(new Color(30, 30, 30));
+        g2.fillRoundRect(barX2, barY2, barWidth, barHeight, 6, 6);
+        g2.setColor(new Color(50, 210, 80));
+        g2.fillRoundRect(barX2, barY2, p2Fill, barHeight, 6, 6);
+        g2.setColor(new Color(255, 215, 0, 180));
+        g2.setStroke(new BasicStroke(1.5f));
+        g2.drawRoundRect(barX2, barY2, barWidth, barHeight, 6, 6);
+
+        int manaBarY2 = barY2 + barHeight + 6;
+        g2.setColor(new Color(20, 20, 60));
+        g2.fillRoundRect(barX2, manaBarY2, barWidth, manaBarHeight, 4, 4);
+        g2.setColor(new Color(60, 140, 255));
+        g2.fillRoundRect(barX2, manaBarY2, p2ManaFill, manaBarHeight, 4, 4);
+        g2.setColor(new Color(255, 215, 0, 180));
+        g2.drawRoundRect(barX2, manaBarY2, barWidth, manaBarHeight, 4, 4);
+        g2.setStroke(new BasicStroke(1));
+
+      
+        g2.setFont(new Font("Serif", Font.BOLD, 16));
+        String p2HpText = p2.getTemplate().getName() + " HP: " + p2.getCurrentHp();
+        FontMetrics fm = g2.getFontMetrics();
+        drawOutlinedString(g2, p2HpText,
+                barX2 + barWidth - fm.stringWidth(p2HpText), panelY + 22, new Color(255, 215, 0), Color.black);
+    }
+
+    // Helper method — add this right after drawHealthBars()
+    private void drawHudPanel(Graphics2D g2, int x, int y, int w, int h) {
+        // Dark background
+        g2.setColor(new Color(15, 15, 25, 210));
+        g2.fillRoundRect(x, y, w, h, 12, 12);
+
+        // Gold border
+        g2.setColor(new Color(180, 140, 0, 200));
+        g2.setStroke(new BasicStroke(2));
+        g2.drawRoundRect(x, y, w, h, 12, 12);
+
+        // Inner highlight
+        g2.setColor(new Color(255, 215, 0, 40));
+        g2.setStroke(new BasicStroke(1));
+        g2.drawRoundRect(x + 3, y + 3, w - 6, h - 6, 8, 8);
+        g2.setStroke(new BasicStroke(1));
     }
 
     private final class SkillProjectile {

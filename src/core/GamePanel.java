@@ -3,7 +3,7 @@ package core;
 import battle.CharacterRoster;
 import battle.FightManager;
 import battle.GameCharacter;
-import java.awt.Color;
+
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.nio.file.*;
 import java.nio.charset.StandardCharsets;
 import world.TileManager;
+
 
 
 public class GamePanel extends JPanel implements Runnable{
@@ -42,7 +43,7 @@ public class GamePanel extends JPanel implements Runnable{
     final int scale = 2;
 
     public final int tileSize = originalTileSize * scale;
-    public final int maxScreenCol = 20;
+    public final int maxScreenCol = 18;
     public final int maxScreenRow = 14;
     public final int screenWidth = tileSize * maxScreenCol;
     public final int screenHeight = tileSize * maxScreenRow;
@@ -97,6 +98,7 @@ public class GamePanel extends JPanel implements Runnable{
             "Edge-Lord's Alley",
             "The Backrooms"
         };
+        private java.awt.image.BufferedImage charSelectBackground;
         private java.awt.image.BufferedImage[] battleMapPreviews = null;
         private int battleMapIndex = 0;
         private GameState battleMapReturnState = GameState.MENU;
@@ -150,7 +152,15 @@ public class GamePanel extends JPanel implements Runnable{
             } catch (Exception e) {
                 menuBackground = null;
             }
+
+            try {
+                charSelectBackground = javax.imageio.ImageIO.read(new java.io.File("assets/backgrounds/CharSelectBG.png"));
+            } catch (Exception e) {
+                charSelectBackground = null;
+}
         }
+
+        
 
 
     
@@ -817,7 +827,13 @@ public class GamePanel extends JPanel implements Runnable{
     }
 
     private void drawAiCharacterSelect(Graphics2D g2) {
-        g2.setColor(Color.black);
+         if (charSelectBackground != null) {
+            g2.drawImage(charSelectBackground, 0, 0, screenWidth, screenHeight, null);
+        } else {
+            g2.setColor(Color.black);
+            g2.fillRect(0, 0, screenWidth, screenHeight);
+        }
+        g2.setColor(new Color(0, 0, 0, 120));
         g2.fillRect(0, 0, screenWidth, screenHeight);
 
         int currentRow = p1CursorRow;
@@ -973,7 +989,14 @@ public class GamePanel extends JPanel implements Runnable{
     }
 
     private void drawPvpCharacterSelect(Graphics2D g2) {
-        g2.setColor(Color.black);
+        if (charSelectBackground != null) {
+            g2.drawImage(charSelectBackground, 0, 0, screenWidth, screenHeight, null);
+        } else {
+            g2.setColor(Color.black);
+            g2.fillRect(0, 0, screenWidth, screenHeight);
+        }
+        // Dark overlay so text stays readable
+        g2.setColor(new Color(0, 0, 0, 120));
         g2.fillRect(0, 0, screenWidth, screenHeight);
 
         boolean isPlayer1 = (gameState == GameState.PVP_P1_SELECT);
@@ -1407,7 +1430,14 @@ public class GamePanel extends JPanel implements Runnable{
     }
 
     private void drawArcade(Graphics2D g2) {
-        g2.setColor(Color.black);
+        if (charSelectBackground != null) {
+            g2.drawImage(charSelectBackground, 0, 0, screenWidth, screenHeight, null);
+        } else {
+            g2.setColor(Color.black);
+            g2.fillRect(0, 0, screenWidth, screenHeight);
+        }
+        // Dark overlay so text stays readable
+        g2.setColor(new Color(0, 0, 0, 120));
         g2.fillRect(0, 0, screenWidth, screenHeight);
 
         // Title
