@@ -22,7 +22,7 @@ public class Doge extends GameCharacter {
 
     public Doge() {
         super(
-                "Doge",
+                "Dogee",
                 "Balanced Fighter",
                 165,
             30,
